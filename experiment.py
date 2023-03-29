@@ -8,6 +8,7 @@ from data_loader import *
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
+data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
 
 
 '''
@@ -16,30 +17,23 @@ Setup
 params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 dates_train = rangex(['2020070100-2020070500-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022020500-PT24H']) # à modifier
+dates_test = rangex(['2022020100-2022020500-PT24H']) # à modifier
+resample = 'r'
 echeances = range(6, 37, 3)
-field_500m = np.load('/cnrm/recyf/Data/users/danjoul/dataset/data_train/G9KP_2021-01-01T00:00:00Z_rr.npy')
-field_2km5 = np.load('/cnrm/recyf/Data/users/danjoul/dataset/data_train/oper_c_2021-01-01T00:00:00Z_rr.npy')
-geometry_500m = field_500m[:,:,0].shape
-size_500m = min(geometry_500m)
-size_500m_crop = highestPowerof2(min(geometry_500m))
-print(size_500m, size_500m_crop)
-geometry_2km5 = field_2km5[:,:,0].shape
-size_2km5 = min(geometry_2km5)
-size_2km5_crop = highestPowerof2(min(geometry_2km5))
 
 
 '''
 Loading data
 '''
-X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample='r')
-X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample='r')
+X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample=resample)
+X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample=resample)
 
 
 '''
 Model definition
 '''
 unet=unet_maker( nb_inputs=1,
-                size_target_domain=size_500m_crop, # domaine de sortie = carré ?
+                size_target_domain=get_size_500m()[1], # domaine de sortie = carré ?
                 shape_inputs=[X_train[0, :, :, :].shape],
                 filters = 1 )
 LR, batch_size, epochs = 0.005, 32, 100
@@ -58,25 +52,7 @@ unet.fit(X_train, y_train,
 '''
 Prediction
 '''
-dates_test = rangex(['2022020100-2022020500-PT24H']) # à modifier
-X_test = np.zeros(shape=[len(dates_test), len(echeances), geometry_2km5[0], geometry_2km5[1], len(params)], dtype=np.float32)
-y_test = np.zeros(shape=[len(dates_test), len(echeances), geometry_500m[0], geometry_500m[1]], dtype=np.float32)
-
-for i_d, d in enumerate(dates_test):
-    filepath_y_test = data_valid_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
-    y_test[i_d, :, :, :] = np.load(filepath_y_test).transpose([2,0,1])
-    for i_p, p in enumerate(params):
-        filepath_X_test = data_valid_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
-        X_test[i_d, :, :, :, i_p] = np.load(filepath_X_test).transpose([2,0,1])
-
-X_test = X_test.reshape((-1, geometry_2km5[0], geometry_2km5[1], len(params)))
-y_test = y_test.reshape((-1, geometry_500m[0], geometry_500m[1]))
-
-X_test = X_test[:, int(0.5* (geometry_2km5[0] - size_2km5_crop)):int(0.5* (geometry_2km5[0] + size_2km5_crop)), int(0.5* (geometry_2km5[1] - size_2km5_crop)):int(0.5* (geometry_2km5[1] + size_2km5_crop)), :]
-y_test = y_test[:, int(0.5* (geometry_500m[0] - size_500m_crop)):int(0.5* (geometry_500m[0] + size_500m_crop)), int(0.5* (geometry_500m[1] - size_500m_crop)):int(0.5* (geometry_500m[1] + size_500m_crop))]
-
-print(X_test.shape)
-print(y_test.shape)
+X_test, y_test = load_X_y(dates_test, echeances, data_test_location, params, resample=resample)
 
 y_pred = unet.predict(X_test)
 
