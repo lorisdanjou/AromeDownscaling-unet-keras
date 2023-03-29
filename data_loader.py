@@ -107,9 +107,6 @@ def load_X_y(dates, echeances, data_location, params, resample='r'):
 Data Loader + static fields
 '''
 def load_X_y_static(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-
-    if resample != 'r':
-        raise ValueError("resample != 'r'")
     
     shape_500m = get_shape_500m()
     shape_2km5 = get_shape_2km5(resample=resample)
@@ -139,7 +136,11 @@ def load_X_y_static(dates, echeances, data_location, data_static_location, param
                     X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
             for i_s, s in enumerate(static_fields):
                 for i_ech, ech in enumerate(echeances):
-                    filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
+                    if resample == 'r':
+                        # filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
+                        filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
+                    else:
+                        filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
                     X[i_d, i_ech, :, :, len(params)+i_s] = np.load(filepath_static)
                     # On ajoute chaque champ statique dans les paramètres de chaque date de chaque échéance : assez bourrin !!!
         except:
