@@ -81,7 +81,7 @@ def unet_maker( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123
         diff_lat=inputs.shape[1]-size+1
         diff_lon=inputs.shape[2]-size+1
         conv0=Conv2D(32, (diff_lat,diff_lon))(inputs)
-        # taille du domaine après une convolution = taille du domaine avant - (taille du kernel -1)
+        # taille du domaine après une convolution = taille du domaine avant - taille du kernel + 1
         # ==> permet de se ramener à un domaine carré de taille une puissance de 2
         conv0=BatchNormalization()(conv0)
         conv0=Activation('relu')(conv0)
@@ -93,7 +93,7 @@ def unet_maker( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123
             prev=pool
         up=block_conv(prev, filters*int(pow(2,i)))
         k=log2(size)
-        for i in range(1,int(log2(size_target_domain)+1)):
+        for i in range(1,int(log2(size_target_domain)+1)):  # pas la même dimension?
             if i<=k:
                 up=block_up_conc(up,filters*int(pow(2,k-i)),conv_down[int(k-i)])
             else :
@@ -121,7 +121,7 @@ def unet_maker( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123
         for i in range(1,int(log2(size))):
             model2 = Dense(filters*int(pow(2,i)))(model2)
     
-        merged = concatenate([last_conv,model2]) # pas la même dimension?
+        merged = concatenate([last_conv,model2])
         up=merged
         k=log2(size)
         for i in range(1,int(log2(size_target_domain)+1)):
