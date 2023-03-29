@@ -130,9 +130,12 @@ print(y_test.shape)
 
 y_pred = unet.predict(X_test)
 
-fig1 = plt.imshow(y_pred[0, :, :])
-plt.colorbar()
-plt.savefig('./y_pred.png')
-fig2 = plt.imshow(y_test[0, :, :])
-plt.colorbar()
-plt.savefig('./y_test.png')
+fig1, ax1 = plt.subplots()
+im1 = ax1.imshow(y_pred[0, :, :])
+fig1.colorbar(im1, ax=ax1)
+fig1.savefig('./y_pred.png')
+
+fig2, ax2 = plt.subplots()
+im2 = ax2.imshow(y_test[0, :, :])
+fig2.colorbar(im2, ax=ax2)
+fig2.savefig('./y_test.png') 
