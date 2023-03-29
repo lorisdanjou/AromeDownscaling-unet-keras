@@ -9,12 +9,14 @@ from data_loader import *
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
 data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
+data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 
 
 '''
 Setup
 '''
 params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
+static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER']
 dates_train = rangex(['2020070100-2020070500-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022020500-PT24H']) # à modifier
 dates_test = rangex(['2022020100-2022020500-PT24H']) # à modifier
@@ -25,8 +27,10 @@ echeances = range(6, 37, 3)
 '''
 Loading data
 '''
-X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample=resample)
-X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample=resample)
+# X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample=resample)
+# X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample=resample)
+X_train, y_train = load_X_y_static(dates_train, echeances, data_train_location, data_static_location, params, resample=resample, static_fields=static_fields)
+X_valid, y_valid = load_X_y_static(dates_valid, echeances, data_valid_location, data_static_location, params, resample=resample, static_fields=static_fields)
 
 
 '''
@@ -52,7 +56,7 @@ unet.fit(X_train, y_train,
 '''
 Prediction
 '''
-X_test, y_test = load_X_y(dates_test, echeances, data_test_location, params, resample=resample)
+X_test, y_test = load_X_y_static(dates_test, echeances, data_test_location, data_static_location, params, resample=resample, static_fields=static_fields)
 
 y_pred = unet.predict(X_test)
 

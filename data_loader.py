@@ -46,7 +46,7 @@ def get_size_2km5(resample='c'):
 '''
 Data Loader
 '''
-def load_X_y(dates, echeances, data_location, params, resample='c'):
+def load_X_y(dates, echeances, data_location, params, resample='r'):
     shape_500m = get_shape_500m()
     shape_2km5 = get_shape_2km5(resample=resample)
 
@@ -84,6 +84,74 @@ def load_X_y(dates, echeances, data_location, params, resample='c'):
         # X[date/ech, x, y, param]
         # y[date/ech, x, y]
     X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(params)))
+    y = y.reshape((-1, shape_500m[0], shape_500m[1]))
+
+    print('reshaped X shape : ' + str(X.shape))
+    print('reshaped y shape : ' + str(y.shape))
+
+    # final shape of the data:
+        # X[date/exh, new_x, new_y, param]
+        # y[date/ech, new_x, new_y, param]
+    X = X[:, int(0.5 * (shape_2km5[0] - get_size_2km5(resample=resample)[1])):int(0.5 * (shape_2km5[0] + get_size_2km5(resample=resample)[1])), 
+            int(0.5 * (shape_2km5[1] - get_size_2km5(resample=resample)[1])):int(0.5 * (shape_2km5[1] + get_size_2km5(resample=resample)[1])), :]
+    y = y[:, int(0.5 * (shape_500m[0] - get_size_500m()[1])):int(0.5 * (shape_500m[0] + get_size_500m()[1])), 
+            int(0.5 * (shape_500m[1] - get_size_500m()[1])):int(0.5 * (shape_500m[1] + get_size_500m()[1]))]
+
+    print('final (cropped) X shape : ' + str(X.shape))
+    print('final (cropped) y shape : ' + str(y.shape))
+
+    return X, y
+
+
+'''
+Data Loader + static fields
+'''
+def load_X_y_static(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
+
+    if resample != 'r':
+        raise ValueError("resample != 'r'")
+    
+    shape_500m = get_shape_500m()
+    shape_2km5 = get_shape_2km5(resample=resample)
+
+    # initial shape of the data:
+        # X[date, ech, x, y, param]
+        # y[date, ech, x, y]
+    X = np.zeros(shape=[len(dates), len(echeances), shape_2km5[0], shape_2km5[1], len(params) + len(static_fields)], dtype=np.float32)
+    y = np.zeros(shape=[len(dates), len(echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
+    static = np.zeros(shape=[shape_2km5[0], shape_2km5[1], len(static_fields)])
+
+    for i_d, d in enumerate(dates):
+        try:
+            try:
+                filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
+                y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+            except:
+                filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
+                y[i_d, :, :, :] = np.load(
+                    filepath_y).transpose([2, 0, 1])
+            for i_p, p in enumerate(params):
+                if resample == 'c':
+                    filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
+                    X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                else:
+                    filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
+                    X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+            for i_s, s in enumerate(static_fields):
+                for i_ech, ech in enumerate(echeances):
+                    filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
+                    X[i_d, i_ech, :, :, len(params)+i_s] = np.load(filepath_static)
+                    # On ajoute chaque champ statique dans les paramètres de chaque date de chaque échéance : assez bourrin !!!
+        except:
+            print('missing day : ' + d)
+
+    print('initial X shape : ' + str(X.shape))
+    print('initial y shape : ' + str(y.shape))
+
+    # new shape of the data :
+        # X[date/ech, x, y, param]
+        # y[date/ech, x, y]
+    X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(params)+len(static_fields)))
     y = y.reshape((-1, shape_500m[0], shape_500m[1]))
 
     print('reshaped X shape : ' + str(X.shape))
