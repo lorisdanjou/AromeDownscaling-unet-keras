@@ -31,7 +31,8 @@ size_2km5_crop = highestPowerof2(min(geometry_2km5))
 '''
 Loading data
 '''
-X_train, y_train, X_valid, y_valid = load_data(dates_train, dates_valid, echeances, data_train_location, data_valid_location, params)
+X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample='r')
+X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample='r')
 
 
 '''
