@@ -15,8 +15,9 @@ data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 '''
 Setup
 '''
-params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER']
+# params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
+params = ["t2m"]
+static_fields = ['SURFGEOPOTENTIEL']
 dates_train = rangex(['2020070100-2020070100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022020100-PT24H']) # à modifier
 dates_test = rangex(['2022020100-2022020100-PT24H']) # à modifier
@@ -27,8 +28,8 @@ echeances = range(6, 37, 3)
 '''
 Loading data
 '''
-X_train, y_train = load_X_y(dates_train, echeances, data_train_location, data_static_location, params, resample=resample, static_fields=static_fields)
-X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, data_static_location, params, resample=resample, static_fields=static_fields)
+X_train, y_train = load_X_y_r(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
+X_valid, y_valid = load_X_y_r(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
 
 
 '''
@@ -39,7 +40,7 @@ Model definition
 #                 shape_inputs=[X_train[0, :, :, :].shape],
 #                 filters = 1 )
 
-unet = unet_maker(X_train[0, :, :, :].shape, y_train[0, :, :].shape, layers = 4, filters = 64)
+unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
 print('unet created')
 LR, batch_size, epochs = 0.005, 32, 1
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
@@ -58,7 +59,7 @@ unet.fit(X_train, y_train,
 '''
 Prediction
 '''
-X_test, y_test = load_X_y_static(dates_test, echeances, data_test_location, data_static_location, params, resample=resample, static_fields=static_fields)
+X_test, y_test = load_X_y_r(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
 
 y_pred = unet.predict(X_test)
 
