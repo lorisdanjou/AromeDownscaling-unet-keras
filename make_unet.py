@@ -18,6 +18,10 @@ from keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from keras.models import Sequential
 
+from math import log2,pow
+import os
+import numpy as np
+
 ### We first define some function which are useful for the rest 
 
 # The RMSE loss
@@ -57,6 +61,9 @@ def highestPowerof2(n):
             break
     return res
 
+def highestEven(n):
+    return (n//2)*2
+
 ### This is the function drawing the UNET. It is designed to adapt to any size of inputs and outputs maps. 
 ### To recall : the emulator proposed in Doury et al (2022) takes two sources of inputs : a set of 2D variables and a 1D vector. 
 ### This function also build the Emul-UNET with only the 2D variables as input. 
@@ -67,10 +74,7 @@ def highestPowerof2(n):
 ### [[width of 2D var,height of 2D var,nb of 2D var]] if nb_inputs=1.
 ### The function returns a Keras model. 
 
-def unet_maker( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123):
-    from math import log2,pow
-    import os
-    import numpy as np
+def unet_maker_doury( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123):
     inputs_list=[]
     size=np.min([highestPowerof2(shape_inputs[0][0]),highestPowerof2(shape_inputs[0][1])])
     # size = puissance de 2 minimale inférieure à l'unde des dimensions du domaine d'entrée 
@@ -136,3 +140,48 @@ def unet_maker( nb_inputs,size_target_domain,shape_inputs, filters = 64,seed=123
         
     lastconv=Conv2D(1, 1, padding='same')(last)
     return (keras.models.Model(inputs=inputs_list, outputs=lastconv))
+
+# Adapted Unet:
+# Inputs: shape_input = [x, y, params]
+#         shape_output = [x, y]  
+
+def unet_maker_complete_upsampling(shape_input, shape_output, layers = 4, filters = 32):
+    inputs_list=[]
+    size=np.min([highestPowerof2(shape_input[0]),highestPowerof2(shape_input[1])])
+    # size = puissance de 2 minimale inférieure à l'unde des dimensions du domaine d'entrée
+    size_target_domain = size
+    inputs = keras.Input(shape = shape_input)
+    inputs_list.append(inputs)
+    conv_down=[]
+    diff_lat=inputs.shape[1]-size+1
+    diff_lon=inputs.shape[2]-size+1
+    conv0=Conv2D(32, (diff_lat,diff_lon))(inputs)
+    # taille du domaine après une convolution = taille du domaine avant - taille du kernel + 1
+    # ==> permet de se ramener à un domaine carré de taille une puissance de 2
+    conv0=BatchNormalization()(conv0)
+    conv0=Activation('relu')(conv0)
+    prev=conv0
+
+    for i in range(layers):
+        conv=block_conv(prev, filters*int(pow(2,i)))
+        pool=MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv)
+        conv_down.append(conv)
+        prev=pool
+        print('down : ', i)
+    up=block_conv(prev, filters*int(pow(2,i)))
+
+    k=log2(size)
+    for i in range(layers-1, -1, -1):
+        up=block_up_conc(up,filters*2**(layers),conv_down[i])
+        print('up conc : ', i)
+
+    net_size = 2**int(log2(size_target_domain)) 
+    print('net_size = ', net_size)
+    print('shape_output = ', shape_output)
+    diff_lat = shape_output[0] - net_size + 1
+    diff_lon = shape_output[1] - net_size + 1
+
+    up = Conv2DTranspose(1, (diff_lat, diff_lon), activation='relu')(up) # A l'air d'être très lourd
+
+    last=Conv2D(1, 1, padding='same')(up)
+    return (keras.models.Model(inputs=inputs_list, outputs=last))

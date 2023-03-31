@@ -17,31 +17,33 @@ Setup
 '''
 params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER']
-dates_train = rangex(['2020070100-2020070500-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022020500-PT24H']) # à modifier
-dates_test = rangex(['2022020100-2022020500-PT24H']) # à modifier
-resample = 'c'
+dates_train = rangex(['2020070100-2020070100-PT24H']) # à modifier
+dates_valid = rangex(['2022020100-2022020100-PT24H']) # à modifier
+dates_test = rangex(['2022020100-2022020100-PT24H']) # à modifier
+resample = 'r'
 echeances = range(6, 37, 3)
 
 
 '''
 Loading data
 '''
-# X_train, y_train = load_X_y(dates_train, echeances, data_train_location, params, resample=resample)
-# X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, params, resample=resample)
-X_train, y_train = load_X_y_static(dates_train, echeances, data_train_location, data_static_location, params, resample=resample, static_fields=static_fields)
-X_valid, y_valid = load_X_y_static(dates_valid, echeances, data_valid_location, data_static_location, params, resample=resample, static_fields=static_fields)
+X_train, y_train = load_X_y(dates_train, echeances, data_train_location, data_static_location, params, resample=resample, static_fields=static_fields)
+X_valid, y_valid = load_X_y(dates_valid, echeances, data_valid_location, data_static_location, params, resample=resample, static_fields=static_fields)
 
 
 '''
 Model definition
 '''
-unet=unet_maker( nb_inputs=1,
-                size_target_domain=get_size_500m()[1], # domaine de sortie = carré ?
-                shape_inputs=[X_train[0, :, :, :].shape],
-                filters = 1 )
+# unet=unet_maker_doury( nb_inputs=1,
+#                 size_target_domain=get_highestPowerof2_500m()[1], # domaine de sortie = carré ?
+#                 shape_inputs=[X_train[0, :, :, :].shape],
+#                 filters = 1 )
+
+unet = unet_maker(X_train[0, :, :, :].shape, y_train[0, :, :].shape, layers = 4, filters = 64)
+print('unet created')
 LR, batch_size, epochs = 0.005, 32, 1
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
+print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1)]                ## Stops the fitting if val_loss does not improve after 15 iterations
              #ModelCheckpoint(path_model, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
