@@ -1,7 +1,6 @@
 import numpy as np 
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
-from make_unet import *
 import matplotlib.pyplot as plt
 from data_loader import *
 
@@ -18,9 +17,9 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
 static_fields = ['SURFGEOPOTENTIEL']
-dates_train = rangex(['2021020100-2021020100-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022020100-PT24H']) # à modifier
-dates_test = rangex(['2022020100-2022020100-PT24H']) # à modifier
+dates_train = rangex(['2021020100-2021022600-PT24H']) # à modifier
+dates_valid = rangex(['2022020100-2022022600-PT24H']) # à modifier
+dates_test = rangex(['2022020100-2022022600-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 

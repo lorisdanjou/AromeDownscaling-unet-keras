@@ -1,9 +1,19 @@
 import numpy as np
-from make_unet import*
 
 '''
 Useful functions to get the shape of a domain
 '''
+
+def highestPowerof2(n):
+    res = 0
+    for i in range(n, 0, -1):
+        # If i is a power of 2
+        if ((i & (i - 1)) == 0):
+            res = i
+            break
+    return res
+
+    
 def get_shape_500m():
     field_500m = np.load('/cnrm/recyf/Data/users/danjoul/dataset/data_train/G9KP_2021-01-01T00:00:00Z_rr.npy')
     return field_500m[:, :, 0].shape
@@ -63,8 +73,7 @@ def load_X_y(dates, echeances, data_location, data_static_location, params, stat
                 y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
             except:
                 filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
-                y[i_d, :, :, :] = np.load(
-                    filepath_y).transpose([2, 0, 1])
+                y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
             for i_p, p in enumerate(params):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
@@ -80,7 +89,6 @@ def load_X_y(dates, echeances, data_location, data_static_location, params, stat
                     else:
                         filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
                     X[i_d, i_ech, :, :, len(params)+i_s] = np.load(filepath_static)
-                    # On ajoute chaque champ statique dans les paramètres de chaque date de chaque échéance : assez bourrin !!!
         except:
             print('missing day : ' + d)
 
