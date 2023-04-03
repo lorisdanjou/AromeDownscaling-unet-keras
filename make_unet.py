@@ -205,7 +205,7 @@ def unet_maker_manu_r(shape_input, layers = 4, filters = 32):
     up=block_conv(prev, filters*int(pow(2,i)))
 
     for i in range(layers-1, -1, -1):
-        up=block_up_conc(up,filters*2**(layers),conv_down[i])
+        up=block_up_conc(up,filters*2**i,conv_down[i])
         print('up conc : ', i)
 
     last=Conv2D(1, 1, padding='same')(up)
