@@ -14,7 +14,7 @@ from keras import backend as K
 
 from keras.models import load_model, Model
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, UpSampling2D, Conv2DTranspose, Reshape, concatenate, BatchNormalization, Activation
-from keras.optimizers import Adam
+from keras.optimizer_v2.adam import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from keras.models import Sequential
 

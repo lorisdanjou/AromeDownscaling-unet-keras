@@ -4,6 +4,7 @@ from make_unet import *
 import matplotlib.pyplot as plt
 from data_loader import *
 
+name_experiment = ''
 output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/'
 
 X_train = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/X_train.npy')
@@ -24,7 +25,7 @@ Model definition
 
 unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
 print('unet created')
-LR, batch_size, epochs = 0.005, 4, 16
+LR, batch_size, epochs = 0.005, 16, 16
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -33,10 +34,35 @@ callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbo
                                 # à définir         
 
 ## FIt of the EMUL-UNET
-unet.fit(X_train, y_train, 
+history = unet.fit(X_train, y_train, 
          batch_size=batch_size, epochs=epochs,  
          validation_data=(X_valid,y_valid), 
-         callbacks = callbacks)
+         callbacks = callbacks,
+         verbose=2, shuffle=True, validation_split=0.1)
+unet.summary()
+print(history.history.keys())
+
+#========== Curves ========================================
+# summarize history for accuracy
+accuracy_curve = plt.figure()
+plt.plot(history.history['rmse_k'])
+plt.plot(history.history['val_rmse_k'])
+plt.title('model rmse_k')
+plt.ylabel('rmse_k')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig('./'+name_experiment+'/'+"RMSE_curve.png")
+# summarize history for loss
+loss_curve = plt.figure()
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig('./'+name_experiment+'/'+"Loss_curve.png")
+
+
 
 '''
 Prediction
