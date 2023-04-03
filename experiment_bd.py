@@ -1,36 +1,17 @@
-
 import numpy as np 
 import random as rn
-from bronx.stdtypes.date import daterangex as rangex
 from make_unet import *
 import matplotlib.pyplot as plt
 from data_loader import *
 
-data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
-data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
-data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
-data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/'
 
-
-'''
-Setup
-'''
-# params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params = ["t2m"]
-static_fields = ['SURFGEOPOTENTIEL']
-dates_train = rangex(['2021020100-2021021000-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022021000-PT24H']) # à modifier
-dates_test = rangex(['2022020100-2022021000-PT24H']) # à modifier
-resample = 'r'
-echeances = range(6, 37, 3)
-
-
-'''
-Loading data
-'''
-X_train, y_train = load_X_y_r(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
-X_valid, y_valid = load_X_y_r(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
+X_train = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/X_train.npy')
+X_valid = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/X_valid.npy')
+X_test  = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/X_test.npy')
+y_train = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/y_train.npy')
+y_valid = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/y_valid.npy')
+y_test  = np.load('/cnrm/recyf/Data/users/danjoul/unet_experiments/y_test.npy')
 
 
 '''
@@ -43,7 +24,7 @@ Model definition
 
 unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
 print('unet created')
-LR, batch_size, epochs = 0.005, 32, 1
+LR, batch_size, epochs = 0.005, 4, 16
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -60,7 +41,6 @@ unet.fit(X_train, y_train,
 '''
 Prediction
 '''
-X_test, y_test = load_X_y_r(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
 
 y_pred = unet.predict(X_test)
 
