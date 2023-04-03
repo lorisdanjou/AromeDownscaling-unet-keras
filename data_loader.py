@@ -1,4 +1,5 @@
 import numpy as np
+from os.path import exists
 
 '''
 Useful functions to get the shape of a domain
@@ -68,12 +69,13 @@ def load_X_y(dates, echeances, data_location, data_static_location, params, stat
 
     for i_d, d in enumerate(dates):
         try:
-            try:
-                filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
+            filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
+            if exists(filepath_y):
                 y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
-            except:
+            else:
                 filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
                 y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+
             for i_p, p in enumerate(params):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
@@ -89,8 +91,8 @@ def load_X_y(dates, echeances, data_location, data_static_location, params, stat
                     else:
                         filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
                     X[i_d, i_ech, :, :, len(params)+i_s] = np.load(filepath_static)
-        except:
-            print('missing day : ' + d)
+        except FileNotFoundError:
+            print('missing day')
 
     print('initial X shape : ' + str(X.shape))
     print('initial y shape : ' + str(y.shape))

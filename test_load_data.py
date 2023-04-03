@@ -1,7 +1,6 @@
 import numpy as np 
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
-from make_unet import *
 import matplotlib.pyplot as plt
 from data_loader import *
 
@@ -17,14 +16,14 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
 static_fields = ['SURFGEOPOTENTIEL']
-dates_test = rangex(['2022020100-2022020100-PT24H']) # à modifier
+dates_train = rangex(['2021022700-2021022800-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 
-X_test, y_test = load_X_y_r(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+X_train, y_train = load_X_y_r(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
 
-print(y_test.shape)
+print(y_train.shape)
 fig2, ax2 = plt.subplots()
-im2 = ax2.imshow(y_test[0, :, :])
+im2 = ax2.imshow(y_train[0, :, :])
 fig2.colorbar(im2, ax=ax2)
 fig2.savefig('./y_test.png') 
