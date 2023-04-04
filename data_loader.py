@@ -1,10 +1,10 @@
 import numpy as np
 from os.path import exists
 
+
 '''
 Useful functions to get the shape of a domain
 '''
-
 def highestPowerof2(n):
     res = 0
     for i in range(n, 0, -1):
@@ -52,10 +52,52 @@ def get_highestPowerof2_2km5(resample='c'):
         return size_2km5, size_2km5_crop
 
 
+def normalize(X, y):
+    for i_ech in range(X.shape[0]):
+        max = np.max(np.abs(y[i_ech, :, :]))
+        if max > 1e-6:
+            y[i_ech, :, :] = y[i_ech, :, :] / max
+
+        for i_p in range(X.shape[3]):
+            max = np.max(np.abs(X[i_ech, :, :, i_p]))
+            if max > 1e-6:
+                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / max 
+    return X, y
+
+
+def standardize(X, y):
+    means_X = []
+    means_y = []
+    stds_X = []
+    stds_y = []
+    for i_ech in range(X.shape[0]):
+        mean_y = np.mean(y[i_ech, :, :])
+        means_y.append(mean_y)
+        y[i_ech, :, :] = y[i_ech, :, :] - mean_y
+        std_y = np.std(y[i_ech, :, :])
+        stds_y.append(std_y)
+        if std_y > 1e-6:
+            y[i_ech, :, :] = y[i_ech, :, :] / std_y
+        for i_p in range(X.shape[3]):
+            mean_X = np.mean(X[i_ech, :, :, i_p])
+            means_X.append(mean_X)
+            X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean_X
+            std_X = np.std(X[i_ech, :, :, i_p])
+            stds_X.append(std_X)
+            if std_X > 1e-6:
+                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std_X
+    return X, y, means_X, stds_X, means_y, stds_y
+
+def destandardize(X, y, means_X, stds_X, means_y, stds_y):
+    '''
+    TO DO
+    '''
+    return X, y
+
+
 '''
 Data Loader
 '''
-
 class Data():
 
     def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
@@ -122,7 +164,7 @@ class Data():
         return X, y
 
 
-    def load_X_y_r(self):
+    def load_X_y_r(self): # adapte l'entrée pour un réseau à 4 convolutions + resample
         X1, y1 = self.load_X_y()
 
         if self.resample == 'r':
@@ -135,38 +177,9 @@ class Data():
 
     def load_normalized_X_y(self):
         X, y = self.load_X_y_r()
-        for i_ech in range(X.shape[0]):
-            max = np.max(np.abs(y[i_ech, :, :]))
-            if max > 1e-6:
-                y[i_ech, :, :] = y[i_ech, :, :] / max
-
-            for i_p in range(X.shape[3]):
-                max = np.max(np.abs(X[i_ech, :, :, i_p]))
-                if max > 1e-6:
-                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / max 
-        return X, y
+        return normalize(X, y)
 
 
     def load_standardized_X_y(self):
         X, y = self.load_X_y_r()
-        means_X = []
-        means_y = []
-        stds_X = []
-        stds_y = []
-        for i_ech in range(X.shape[0]):
-            mean_y = np.mean(np.abs(y[i_ech, :, :]))
-            means_y.append(mean_y)
-            y[i_ech, :, :] = y[i_ech, :, :] - mean_y
-            std_y = np.std(np.abs(y[i_ech, :, :]))
-            stds_y.append(std_y)
-            if std_y > 1e-6:
-                y[i_ech, :, :] = y[i_ech, :, :] / std_y
-            for i_p in range(X.shape[3]):
-                mean_X = np.mean(np.abs(X[i_ech, :, :, i_p]))
-                means_X.append(mean_X)
-                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean_X
-                std_X = np.std(np.abs(X[i_ech, :, :, i_p]))
-                stds_X.append(std_X)
-                if std_X > 1e-6:
-                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std_X
-        return X, y, means_X, stds_X, means_y, stds_y
+        return standardize(X, y)
