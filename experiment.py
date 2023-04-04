@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import data_loader as dl
 
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4_0.005_32_64_jan_mar_standardized/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/surfgeopotentiel/'
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
@@ -19,7 +19,7 @@ Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
-static_fields = []
+static_fields = ['SURFGEOPOTENTIEL']
 dates_train = rangex(['2021010100-2021033100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H']) # à modifier
