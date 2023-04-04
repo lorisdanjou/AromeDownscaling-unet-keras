@@ -106,50 +106,15 @@ def load_X_y(dates, echeances, data_location, data_static_location, params, stat
     print('reshaped X shape : ' + str(X.shape))
     print('reshaped y shape : ' + str(y.shape))
 
-    # final shape of the data:
-        # X[date/exh, new_x, new_y, param]
-        # y[date/ech, new_x, new_y, param]
-    # X = X[:, int(0.5 * (shape_2km5[0] - get_highestPowerof2_2km5(resample=resample)[1])):int(0.5 * (shape_2km5[0] + get_highestPowerof2_2km5(resample=resample)[1])), 
-    #         int(0.5 * (shape_2km5[1] - get_highestPowerof2_2km5(resample=resample)[1])):int(0.5 * (shape_2km5[1] + get_highestPowerof2_2km5(resample=resample)[1])), :]
-    # y = y[:, int(0.5 * (shape_500m[0] - get_highestPowerof2_500m()[1])):int(0.5 * (shape_500m[0] + get_highestPowerof2_500m()[1])), 
-    #         int(0.5 * (shape_500m[1] - get_highestPowerof2_500m()[1])):int(0.5 * (shape_500m[1] + get_highestPowerof2_500m()[1]))]
-
-    # print('final (cropped) X shape : ' + str(X.shape))
-    # print('final (cropped) y shape : ' + str(y.shape))
-
     return X, y
+
 
 def load_X_y_r(dates, echeances, data_location, data_static_location, params, static_fields=[]):
 
     X1, y1 = load_X_y(dates, echeances, data_location, data_static_location, params, static_fields, resample='r')
-    # X2 = np.zeros(shape=[X1.shape[0], X1.shape[1]+10, X1.shape[2], X1.shape[3]])
-    # y2 = np.zeros(shape=[y1.shape[0], y1.shape[1]+10, y1.shape[2]])
-    # X = np.zeros(shape=[X2.shape[0], X2.shape[1], X2.shape[2]+5, X1.shape[3]])
-    # y = np.zeros(shape=[y2.shape[0], y2.shape[1], y2.shape[2]+5])
 
-    # X2[:, 5:-5, :, :], y2[:, 5:-5, :] = X1, y1
-   
-    
-    # # padding (rows):
-    # for i in range(5):
-    #     X2[:, i, :, :] = X1[:, 4-i, :, :]
-    #     X2[:, -(i+1), :, :] = X1[:, -(6-(i+1)), :, :]
-    #     y2[:, i, :] = y1[:, 4-i, :]
-    #     y2[:, -(i+1), :] = y1[:, -(6-(i+1)), :]
-
-    # X[:, :, 3:-2, :], y[:, :, 3:-2] = X2, y2
-    
-    # # padding (cols):
-    # for i in range(2):
-    #     X[:, :, i, :] = X2[:, :, 2-i, :]
-    #     X[:, :, -(i+1), :] = X2[:, :, -(3-(i+1)), :]
-    #     y[:, :, i] = y2[:, :, 2-i]
-    #     y[:, :, -(i+1)] = y2[:, :, -(3-(i+1))]
-    # X[:, :, 2, :] = X2[:, :, 0, :]
-    # y[:, :, 2] = y2[:, :, 0]
-
-    X = np.pad(X1, ((0,0), (5,5), (2,3), (0,0)), mode='symmetric')
-    y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='symmetric')
+    X = np.pad(X1, ((0,0), (5,5), (2,3), (0,0)), mode='reflect')
+    y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
 
     return X, y
 
