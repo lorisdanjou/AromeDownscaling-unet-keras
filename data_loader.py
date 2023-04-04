@@ -68,6 +68,7 @@ class Data():
         self.resample = resample
 
 
+
     def load_X_y(self):
         shape_500m = get_shape_500m()
         shape_2km5 = get_shape_2km5(resample=self.resample)
@@ -132,3 +133,32 @@ class Data():
             print('data not resampled')
 
 
+    def load_normalized_X_y(self):
+        X, y = self.load_X_y_r()
+        for i_ech in range(X.shape[0]):
+            max = np.max(np.abs(y[i_ech, :, :]))
+            if max > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] / max
+
+            for i_p in range(X.shape[3]):
+                max = np.max(np.abs(X[i_ech, :, :, i_p]))
+                if max > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / max 
+        return X, y
+
+
+    def load_standardized_X_y(self):
+        X, y = self.load_X_y_r()
+        for i_ech in range(X.shape[0]):
+            mean = np.mean(np.abs(y[i_ech, :, :]))
+            y[i_ech, :, :] = y[i_ech, :, :] - mean
+            std = np.std(np.abs(y[i_ech, :, :]))
+            if std > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] / std
+            for i_p in range(X.shape[3]):
+                mean = np.mean(np.abs(X[i_ech, :, :, i_p]))
+                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean
+                std = np.std(np.abs(X[i_ech, :, :, i_p]))
+                if std > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std
+        return X, y

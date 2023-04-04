@@ -5,9 +5,8 @@ from make_unet import *
 import matplotlib.pyplot as plt
 import data_loader as dl
 
-name_experiment = ''
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4_0.005_32_64_jan_mar_standardized/'
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
@@ -21,9 +20,9 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
 static_fields = []
-dates_train = rangex(['2021020100-2021022600-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022021500-PT24H']) # à modifier
-dates_test = rangex(['2022021600-2022022600-PT24H']) # à modifier
+dates_train = rangex(['2021010100-2021033100-PT24H']) # à modifier
+dates_valid = rangex(['2022020100-2022022800-PT24H']) # à modifier
+dates_test = rangex(['2022030100-2022033100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 
@@ -32,11 +31,14 @@ echeances = range(6, 37, 3)
 Loading data
 '''
 data_train = dl.Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
-X_train, y_train = data_train.load_X_y_r()
+X_train, y_train = data_train.load_standardized_X_y()
 data_valid = dl.Data(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
-X_valid, y_valid = data_valid.load_X_y_r()
+X_valid, y_valid = data_valid.load_standardized_X_y()
 data_test = dl.Data(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
-X_test, y_test = data_test.load_X_y_r()
+X_test, y_test = data_test.load_standardized_X_y()
+np.save(output_dir + 'X_test.npy', X_test, allow_pickle=True)
+np.save(output_dir + 'y_test.npy', y_test, allow_pickle=True)
+
 
 '''
 Model definition
@@ -73,7 +75,7 @@ plt.title('model rmse_k')
 plt.ylabel('rmse_k')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.savefig(output_dir + name_experiment + '/RMSE_curve.png')
+plt.savefig(output_dir + 'RMSE_curve.png')
 # summarize history for loss
 loss_curve = plt.figure()
 plt.plot(history.history['loss'])
@@ -82,7 +84,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.savefig(output_dir + name_experiment + '/Loss_curve.png')
+plt.savefig(output_dir + 'Loss_curve.png')
 
 
 
@@ -92,14 +94,14 @@ Prediction
 y_pred = unet.predict(X_test)
 np.save(output_dir + 'y_pred.npy', y_pred, allow_pickle=True)
 
-for i in range(y_pred.shape[0]):
+# for i in range(y_pred.shape[0]):
 
-    fig1, ax1 = plt.subplots()
-    im1 = ax1.imshow(y_pred[i, :, :])
-    fig1.colorbar(im1, ax=ax1)
-    fig1.savefig(output_dir + 'y_' + str(i) + '_pred.png')
+#     fig1, ax1 = plt.subplots()
+#     im1 = ax1.imshow(y_pred[i, :, :])
+#     fig1.colorbar(im1, ax=ax1)
+#     fig1.savefig(output_dir + name_experiment + '/y_' + str(i) + '_pred.png')
 
-    fig2, ax2 = plt.subplots()
-    im2 = ax2.imshow(y_test[i, :, :])
-    fig2.colorbar(im2, ax=ax2)
-    fig2.savefig(output_dir + 'y_' + str(i) + '_test.png') 
+#     fig2, ax2 = plt.subplots()
+#     im2 = ax2.imshow(y_test[i, :, :])
+#     fig2.colorbar(im2, ax=ax2)
+#     fig2.savefig(output_dir + name_experiment + '/y_' + str(i) + '_test.png') 

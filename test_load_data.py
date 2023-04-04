@@ -15,13 +15,13 @@ Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
-static_fields = ['SURFGEOPOTENTIEL']
+static_fields = []
 dates_train = rangex(['2021020100-2021022800-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 
 data_train = dl.Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields, resample=resample)
-X_train, y_train = data_train.load_X_y_r()
+X_train, y_train = data_train.load_normalized_X_y()
 
 print(y_train.shape)
 fig2, ax2 = plt.subplots()
