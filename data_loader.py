@@ -149,16 +149,24 @@ class Data():
 
     def load_standardized_X_y(self):
         X, y = self.load_X_y_r()
+        means_X = []
+        means_y = []
+        stds_X = []
+        stds_y = []
         for i_ech in range(X.shape[0]):
-            mean = np.mean(np.abs(y[i_ech, :, :]))
-            y[i_ech, :, :] = y[i_ech, :, :] - mean
-            std = np.std(np.abs(y[i_ech, :, :]))
-            if std > 1e-6:
-                y[i_ech, :, :] = y[i_ech, :, :] / std
+            mean_y = np.mean(np.abs(y[i_ech, :, :]))
+            means_y.append(mean_y)
+            y[i_ech, :, :] = y[i_ech, :, :] - mean_y
+            std_y = np.std(np.abs(y[i_ech, :, :]))
+            stds_y.append(std_y)
+            if std_y > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] / std_y
             for i_p in range(X.shape[3]):
-                mean = np.mean(np.abs(X[i_ech, :, :, i_p]))
-                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean
-                std = np.std(np.abs(X[i_ech, :, :, i_p]))
-                if std > 1e-6:
-                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std
-        return X, y
+                mean_X = np.mean(np.abs(X[i_ech, :, :, i_p]))
+                means_X.append(mean_X)
+                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean_X
+                std_X = np.std(np.abs(X[i_ech, :, :, i_p]))
+                stds_X.append(std_X)
+                if std_X > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std_X
+        return X, y, means_X, stds_X, means_y, stds_y
