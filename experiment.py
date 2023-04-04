@@ -90,6 +90,7 @@ plt.savefig(output_dir + name_experiment + '/Loss_curve.png')
 Prediction
 '''
 y_pred = unet.predict(X_test)
+np.save(output_dir + 'y_pred.npy', y_pred, allow_pickle=True)
 
 for i in range(y_pred.shape[0]):
 
