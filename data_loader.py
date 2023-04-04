@@ -55,67 +55,80 @@ def get_highestPowerof2_2km5(resample='c'):
 '''
 Data Loader
 '''
-def load_X_y(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-    
-    shape_500m = get_shape_500m()
-    shape_2km5 = get_shape_2km5(resample=resample)
 
-    # initial shape of the data:
-        # X[date, ech, x, y, param]
-        # y[date, ech, x, y]
-    X = np.zeros(shape=[len(dates), len(echeances), shape_2km5[0], shape_2km5[1], len(params) + len(static_fields)], dtype=np.float32)
-    y = np.zeros(shape=[len(dates), len(echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
-    static = np.zeros(shape=[shape_2km5[0], shape_2km5[1], len(static_fields)])
+class Data():
 
-    for i_d, d in enumerate(dates):
-        try:
-            filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
-            if exists(filepath_y):
-                y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
-            else:
-                filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
-                y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
+        self.dates = dates
+        self.echeances = echeances
+        self.data_location = data_location
+        self.data_static_location = data_static_location
+        self.params = params
+        self.static_fields = static_fields
+        self.resample = resample
 
-            for i_p, p in enumerate(params):
-                if resample == 'c':
-                    filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+
+    def load_X_y(self):
+        shape_500m = get_shape_500m()
+        shape_2km5 = get_shape_2km5(resample=self.resample)
+
+        # initial shape of the data:
+            # X[date, ech, x, y, param]
+            # y[date, ech, x, y]
+        X = np.zeros(shape=[len(self.dates), len(self.echeances), shape_2km5[0], shape_2km5[1], len(self.params) + len(self.static_fields)], dtype=np.float32)
+        y = np.zeros(shape=[len(self.dates), len(self.echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
+        static = np.zeros(shape=[shape_2km5[0], shape_2km5[1], len(self.static_fields)])
+
+        for i_d, d in enumerate(self.dates):
+            try:
+                filepath_y = self.data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
+                if exists(filepath_y):
+                    y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
                 else:
-                    filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
-            for i_s, s in enumerate(static_fields):
-                for i_ech, ech in enumerate(echeances):
-                    if resample == 'r':
-                        filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
-                        # filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
+                    filepath_y = self.data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
+                    y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+
+                for i_p, p in enumerate(self.params):
+                    if self.resample == 'c':
+                        filepath_X = self.data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
+                        X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                     else:
-                        filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
-                    X[i_d, i_ech, :, :, len(params)+i_s] = np.load(filepath_static)
-        except FileNotFoundError:
-            print('missing day')
+                        filepath_X = self.data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
+                        X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                for i_s, s in enumerate(self.static_fields):
+                    for i_ech, ech in enumerate(self.echeances):
+                        if self.resample == 'r':
+                            filepath_static = self.data_static_location + 'static_G9KP_' + s + '.npy'
+                            # filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
+                        else:
+                            filepath_static = self.data_static_location + 'static_oper_c_' + s + '.npy'
+                        X[i_d, i_ech, :, :, len(self.params)+i_s] = np.load(filepath_static)
+            except FileNotFoundError:
+                print('missing day')
 
-    print('initial X shape : ' + str(X.shape))
-    print('initial y shape : ' + str(y.shape))
+        print('initial X shape : ' + str(X.shape))
+        print('initial y shape : ' + str(y.shape))
 
-    # new shape of the data :
-        # X[date/ech, x, y, param]
-        # y[date/ech, x, y]
-    X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(params)+len(static_fields)))
-    y = y.reshape((-1, shape_500m[0], shape_500m[1]))
+        # new shape of the data :
+            # X[date/ech, x, y, param]
+            # y[date/ech, x, y]
+        X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(self.params)+len(self.static_fields)))
+        y = y.reshape((-1, shape_500m[0], shape_500m[1]))
 
-    print('reshaped X shape : ' + str(X.shape))
-    print('reshaped y shape : ' + str(y.shape))
+        print('reshaped X shape : ' + str(X.shape))
+        print('reshaped y shape : ' + str(y.shape))
 
-    return X, y
+        return X, y
 
 
-def load_X_y_r(dates, echeances, data_location, data_static_location, params, static_fields=[]):
+    def load_X_y_r(self):
+        X1, y1 = self.load_X_y()
 
-    X1, y1 = load_X_y(dates, echeances, data_location, data_static_location, params, static_fields, resample='r')
-
-    X = np.pad(X1, ((0,0), (5,5), (2,3), (0,0)), mode='reflect')
-    y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
-
-    return X, y
+        if self.resample == 'r':
+            X = np.pad(X1, ((0,0), (5,5), (2,3), (0,0)), mode='reflect')
+            y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
+            return X, y
+        else:
+            print('data not resampled')
 
 

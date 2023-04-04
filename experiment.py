@@ -3,7 +3,7 @@ import random as rn
 from bronx.stdtypes.date import daterangex as rangex
 from make_unet import *
 import matplotlib.pyplot as plt
-from data_loader import *
+import data_loader as dl
 
 name_experiment = ''
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
@@ -31,9 +31,12 @@ echeances = range(6, 37, 3)
 '''
 Loading data
 '''
-X_train, y_train = load_X_y_r(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
-X_valid, y_valid = load_X_y_r(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
-X_test, y_test = load_X_y_r(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+data_train = dl.Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
+X_train, y_train = data_train.load_X_y_r()
+data_valid = dl.Data(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
+X_valid, y_valid = data_valid.load_X_y_r()
+data_test = dl.Data(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+X_test, y_test = data_test.load_X_y_r()
 
 '''
 Model definition

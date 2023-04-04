@@ -2,7 +2,7 @@ import numpy as np
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
 import matplotlib.pyplot as plt
-from data_loader import *
+import data_loader as dl
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
@@ -16,11 +16,12 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ["t2m"]
 static_fields = ['SURFGEOPOTENTIEL']
-dates_train = rangex(['2021022700-2021022800-PT24H']) # à modifier
+dates_train = rangex(['2021020100-2021022800-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 
-X_train, y_train = load_X_y_r(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
+data_train = dl.Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields, resample=resample)
+X_train, y_train = data_train.load_X_y_r()
 
 print(y_train.shape)
 fig2, ax2 = plt.subplots()
