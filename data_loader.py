@@ -52,49 +52,6 @@ def get_highestPowerof2_2km5(resample='c'):
         return size_2km5, size_2km5_crop
 
 
-def normalize(X, y):
-    for i_ech in range(X.shape[0]):
-        max = np.max(np.abs(y[i_ech, :, :]))
-        if max > 1e-6:
-            y[i_ech, :, :] = y[i_ech, :, :] / max
-
-        for i_p in range(X.shape[3]):
-            max = np.max(np.abs(X[i_ech, :, :, i_p]))
-            if max > 1e-6:
-                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / max 
-    return X, y
-
-
-def standardize(X, y):
-    means_X = []
-    means_y = []
-    stds_X = []
-    stds_y = []
-    for i_ech in range(X.shape[0]):
-        mean_y = np.mean(y[i_ech, :, :])
-        means_y.append(mean_y)
-        y[i_ech, :, :] = y[i_ech, :, :] - mean_y
-        std_y = np.std(y[i_ech, :, :])
-        stds_y.append(std_y)
-        if std_y > 1e-6:
-            y[i_ech, :, :] = y[i_ech, :, :] / std_y
-        for i_p in range(X.shape[3]):
-            mean_X = np.mean(X[i_ech, :, :, i_p])
-            means_X.append(mean_X)
-            X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean_X
-            std_X = np.std(X[i_ech, :, :, i_p])
-            stds_X.append(std_X)
-            if std_X > 1e-6:
-                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std_X
-    return X, y, means_X, stds_X, means_y, stds_y
-
-def destandardize(X, y, means_X, stds_X, means_y, stds_y):
-    '''
-    TO DO
-    '''
-    return X, y
-
-
 '''
 Data Loader
 '''
@@ -109,9 +66,7 @@ class Data():
         self.static_fields = static_fields
         self.resample = resample
 
-
-
-    def load_X_y(self):
+        # Load X & y
         shape_500m = get_shape_500m()
         shape_2km5 = get_shape_2km5(resample=self.resample)
 
@@ -161,25 +116,100 @@ class Data():
         print('reshaped X shape : ' + str(X.shape))
         print('reshaped y shape : ' + str(y.shape))
 
-        return X, y
+        self.X = X
+        self.y = y
 
 
-    def load_X_y_r(self): # adapte l'entrée pour un réseau à 4 convolutions + resample
-        X1, y1 = self.load_X_y()
+    def pad_X_y(self): # adapte l'entrée pour un réseau à 4 convolutions + resample
+        X1, y1 = self.X, self.y
 
         if self.resample == 'r':
             X = np.pad(X1, ((0,0), (5,5), (2,3), (0,0)), mode='reflect')
             y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
-            return X, y
+            self.X = X
+            self.y = y
         else:
             print('data not resampled')
 
 
-    def load_normalized_X_y(self):
-        X, y = self.load_X_y_r()
-        return normalize(X, y)
+    def normalize_X_y(self):
+        X, y = self.X, self.y
+        maxs_X = np.zeros(X[:, 0, 0, :].shape)
+        maxs_y = np.zeros(X[:, 0, 0, 0].shape)
+        for i_ech in range(X.shape[0]):
+            max_y = np.max(np.abs(y[i_ech, :, :]))
+            maxs_y[i_ech] = max_y
+            if max_y > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] / max_y
+
+            for i_p in range(X.shape[3]):
+                max_X = np.max(np.abs(X[i_ech, :, :, i_p]))
+                maxs_X[i_ech, i_p] = max_X
+                if max_X > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / max_X 
+        self.X = X
+        self.y = y
+        return maxs_X, maxs_y
 
 
-    def load_standardized_X_y(self):
-        X, y = self.load_X_y_r()
-        return standardize(X, y)
+    def standardize_X_y(self):
+        X, y = self.X, self.y
+        means_X = np.zeros(X[:, 0, 0, :].shape)
+        means_y = np.zeros(X[:, 0, 0, 0].shape)
+        stds_X = np.zeros(X[:, 0, 0, :].shape)
+        stds_y = np.zeros(X[:, 0, 0, 0].shape)
+
+        for i_ech in range(X.shape[0]):
+            mean_y = np.mean(y[i_ech, :, :])
+            means_y[i_ech] = mean_y
+            y[i_ech, :, :] = y[i_ech, :, :] - mean_y
+            std_y = np.std(y[i_ech, :, :])
+            stds_y[i_ech] = std_y
+            if std_y > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] / std_y
+            for i_p in range(X.shape[3]):
+                mean_X = np.mean(X[i_ech, :, :, i_p])
+                means_X[i_ech, i_p] = mean_X
+                X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] - mean_X
+                std_X = np.std(X[i_ech, :, :, i_p])
+                stds_X[i_ech, i_p] = std_X
+                if std_X > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] / std_X
+        self.X = X
+        self.y = y
+        return means_X, stds_X, means_y, stds_y
+
+    def denormalize_X_y(self, maxs_X, maxs_y):
+        X, y = self.X, self.y
+        X, y = self.X, self.y
+        for i_ech in range(X.shape[0]):
+            max_y = maxs_y[i_ech]
+            if max_y > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] * max_y
+
+            for i_p in range(X.shape[3]):
+                max_X = maxs_X[i_ech, i_p]
+                if max_X > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] * max_X 
+        self.X = X
+        self.y = y
+
+
+    def destandardize_X_y(self, means_X, stds_X, means_y, stds_y):
+        X, y = self.X, self.y
+        
+        for i_ech in range(X.shape[0]):
+            mean_y = means_y[i_ech]
+            std_y = stds_y[i_ech]
+            if std_y > 1e-6:
+                y[i_ech, :, :] = y[i_ech, :, :] * std_y
+            y[i_ech, :, :] = y[i_ech, :, :] + mean_y
+            for i_p in range(X.shape[3]):
+                mean_X = means_X[i_ech, i_p]
+                std_X = stds_X[i_ech, i_p]
+                if std_X > 1e-6:
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] * std_X
+            X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] + mean_X
+
+        self.X = X
+        self.y = y
