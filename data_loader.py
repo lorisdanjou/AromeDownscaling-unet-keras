@@ -119,6 +119,10 @@ class Data():
         self.X = X
         self.y = y
 
+    def copy(self):
+        copy = Data(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample)
+        return copy
+
 
     def pad_X_y(self): # adapte l'entrée pour un réseau à 4 convolutions + resample
         X1, y1 = self.X, self.y
@@ -130,6 +134,14 @@ class Data():
             self.y = y
         else:
             print('data not resampled')
+
+    def crop_X_y(self):
+        X, y = self.X, self.y
+        if self.resample == 'r':
+            X1 = X[:, 5:-5, 2:-3, :]
+            y1 = y[:, 5:-5, 2:-3]
+        self.X = X1
+        self.y = y1
 
 
     def normalize_X_y(self):
