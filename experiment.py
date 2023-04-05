@@ -121,8 +121,8 @@ np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
 Post-processing
 '''
 # Test:
-data_test.denormalize_X_y(max_X_test,  max_y_test)
 data_test.destandardize_X_y(mean_X_test,  std_X_test,  mean_y_test,  std_y_test)
+data_test.denormalize_X_y(max_X_test,  max_y_test)
 data_test.crop_X_y()
 X_test, y_test = data_test.X, data_test.y
 

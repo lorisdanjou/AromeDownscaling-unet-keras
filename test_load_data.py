@@ -21,12 +21,11 @@ resample = 'r'
 echeances = range(6, 37, 3)
 
 data_train = dl.Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields, resample=resample)
-data_2 = data_train.copy()
+maxs_X, maxs_y = data_train.normalize_X_y()
 means_X, stds_X, means_y, stds_y = data_train.standardize_X_y()
-# data_train.destandardize_X_y(means_X, stds_X, means_y, stds_y)
-# maxs_X, maxs_y = data_train.normalize_X_y()
-# data_train.denormalize_X_y(maxs_X, maxs_y)
-X_train, y_train = data_2.X, data_2.y
+data_train.destandardize_X_y(means_X, stds_X, means_y, stds_y)
+data_train.denormalize_X_y(maxs_X, maxs_y)
+X_train, y_train = data_train.X, data_train.y
 
 print(y_train.shape)
 fig2, ax2 = plt.subplots()
