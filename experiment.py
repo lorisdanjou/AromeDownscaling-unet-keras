@@ -3,7 +3,7 @@ import random as rn
 from bronx.stdtypes.date import daterangex as rangex
 from make_unet import *
 import matplotlib.pyplot as plt
-from data_loader import Data
+from data_manager import *
 from results import Results
 
 
@@ -31,29 +31,38 @@ output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64
 '''
 Loading data
 '''
-data_train = Data(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
-data_valid = Data(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
-data_test = Data(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+data_X_train = Data_X(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
+data_y_train = Data_y(dates_train, echeances, data_train_location, data_static_location, params, static_fields=static_fields)
+
+data_X_valid = Data_X(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
+data_y_valid = Data_y(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields)
+
+data_X_test = Data_X(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+data_y_test = Data_y(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
 
 
 '''
 Pre-processing
 '''
-data_train.pad_X_y()
-data_valid.pad_X_y()
-data_test.pad_X_y()
+data_X_train.pad()
+data_y_train.pad()
 
-max_X_train, max_y_train = data_train.normalize_X_y()
-max_X_valid, max_y_valid = data_valid.normalize_X_y()
-max_X_test,  max_y_test  = data_test.normalize_X_y()
+data_X_valid.pad()
+data_y_valid.pad()
 
-mean_X_train, std_X_train, mean_y_train, std_y_train = data_train.standardize_X_y()
-mean_X_valid, std_X_valid, mean_y_valid, std_y_valid = data_valid.standardize_X_y()
-mean_X_test,  std_X_test,  mean_y_test,  std_y_test  = data_test.standardize_X_y()
+data_X_test.pad()
 
-X_train, y_train = data_train.X, data_train.y
-X_valid, y_valid = data_valid.X, data_valid.y
-X_test , y_test  = data_test.X,  data_test.y
+max_X_train, max_y_train = data_X_train.normalize(), data_y_train.normalize()
+max_X_valid, max_y_valid = data_X_valid.normalize(), data_y_valid.normalize()
+max_X_test, max_y_test = data_X_test.normalize(), data_y_test.normalize()
+
+mean_X_train, std_X_train, mean_y_train, std_y_train = data_X_train.standardize(), data_y_train.standardize()
+mean_X_valid, std_X_valid, mean_y_valid, std_y_valid = data_X_valid.standardize(), data_y_valid.standardize()
+mean_X_test, std_X_test, mean_y_test, std_y_test = data_X_test.standardize(), data_y_test.standardize()
+
+X_train, y_train = data_X_train.X, data_y_train.y
+X_valid, y_valid = data_X_valid.X, data_y_valid.y
+X_test , y_test  = data_X_test.X,  data_y_test.y
 
 np.save(output_dir + 'X_test.npy', X_test, allow_pickle=True)
 np.save(output_dir + 'y_test.npy', y_test, allow_pickle=True)
@@ -111,10 +120,10 @@ plt.savefig(output_dir + 'Loss_curve.png')
 '''
 Prediction
 '''
-data_pred = data_test.copy()
+data_y_pred = data_y_test.copy()
 y_pred = unet.predict(X_test)
 y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
-data_pred.y = y_pred
+data_y_pred.y = y_pred
 np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
 
 
@@ -122,19 +131,19 @@ np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
 Post-processing
 '''
 # Test:
-data_test.destandardize_X_y(mean_X_test,  std_X_test,  mean_y_test,  std_y_test)
-data_test.denormalize_X_y(max_X_test,  max_y_test)
-data_test.crop_X_y()
-X_test, y_test = data_test.X, data_test.y
+data_y_test.destandardize(mean_y_test,  std_y_test)
+data_y_test.denormalize(max_y_test)
+data_y_test.crop()
+X_test, y_test = data_X_test.X, data_y_test.y
 
 # Pred:
 # /!\ indice du paramètre d'intérêt
-max_X_pred,  max_y_pred  = max_X_test, max_X_test[:, 0] 
-mean_X_pred,  std_X_pred,  mean_y_pred,  std_y_pred  = mean_X_test,  std_X_test,  mean_X_test[:, 0],  std_X_test[:, 0]
-data_pred.destandardize_X_y(mean_X_pred,  std_X_pred,  mean_y_pred,  std_y_pred)
-data_pred.denormalize_X_y(max_X_pred,  max_y_pred)
-data_pred.crop_X_y()
-X_pred, y_pred = data_pred.X, data_pred.y
+max_y_pred  = max_X_test[:, 0] 
+mean_y_pred,  std_y_pred  = mean_X_test[:, 0],  std_X_test[:, 0]
+data_y_pred.destandardize(mean_y_pred,  std_y_pred)
+data_y_pred.denormalize(max_y_pred)
+data_y_pred.crop()
+y_pred = data_y_pred.y
 
 np.save(output_dir + 'y_pred.npy', y_pred, allow_pickle=True)
 np.save(output_dir + 'X_test.npy', X_test, allow_pickle=True)
