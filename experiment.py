@@ -113,6 +113,7 @@ Prediction
 '''
 data_pred = data_test.copy()
 y_pred = unet.predict(X_test)
+y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
 data_pred.y = y_pred
 np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
 
