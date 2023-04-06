@@ -56,9 +56,12 @@ max_X_train, max_y_train = data_X_train.normalize(), data_y_train.normalize()
 max_X_valid, max_y_valid = data_X_valid.normalize(), data_y_valid.normalize()
 max_X_test, max_y_test = data_X_test.normalize(), data_y_test.normalize()
 
-mean_X_train, std_X_train, mean_y_train, std_y_train = data_X_train.standardize(), data_y_train.standardize()
-mean_X_valid, std_X_valid, mean_y_valid, std_y_valid = data_X_valid.standardize(), data_y_valid.standardize()
-mean_X_test, std_X_test, mean_y_test, std_y_test = data_X_test.standardize(), data_y_test.standardize()
+mean_X_train, std_X_train = data_X_train.standardize()
+mean_y_train, std_y_train = data_y_train.standardize()
+mean_X_valid, std_X_valid = data_X_valid.standardize()
+mean_y_valid, std_y_valid = data_y_valid.standardize()
+mean_X_test, std_X_test = data_X_test.standardize()
+mean_y_test, std_y_test = data_y_test.standardize()
 
 X_train, y_train = data_X_train.X, data_y_train.y
 X_valid, y_valid = data_X_valid.X, data_y_valid.y

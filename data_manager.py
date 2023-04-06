@@ -76,7 +76,7 @@ class Data():
 class Data_X(Data):
 
     def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super.__init__(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r')
+        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
 
         # Load X
         shape_500m = get_shape_500m()
@@ -108,7 +108,7 @@ class Data_X(Data):
         print('initial X shape : ' + str(X.shape))
 
         # new shape of the data : X[date/ech, x, y, param]
-        X = Data_X.reshape((-1, shape_2km5[0], shape_2km5[1], len(self.params)+len(self.static_fields)))
+        X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(self.params)+len(self.static_fields)))
 
         print('reshaped X shape : ' + str(X.shape))
 
@@ -193,7 +193,7 @@ class Data_X(Data):
 class Data_y(Data):
     
     def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super.__init__(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r')
+        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
 
         # Load y
         shape_500m = get_shape_500m()
@@ -295,7 +295,7 @@ class Data_y(Data):
 
 class Data_baseline(Data):
     def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super.__init__(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r')
+        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
         shape_500m = get_shape_500m()
         baseline = np.zeros(shape=[len(self.dates), len(self.echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
 
@@ -306,10 +306,10 @@ class Data_baseline(Data):
             except FileNotFoundError:
                 print('missing day')
 
-        print('initial y shape : ' + str(y.shape))
+        print('initial baseline shape : ' + str(baseline.shape))
 
-        y = y.reshape((-1, shape_500m[0], shape_500m[1]))
+        baseline = baseline.reshape((-1, shape_500m[0], shape_500m[1]))
 
-        print('reshaped y shape : ' + str(y.shape))
+        print('reshaped baseline shape : ' + str(baseline.shape))
 
         self.baseline = baseline

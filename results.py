@@ -1,17 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from random import *
+from data_manager import *
 
 def get_ind_terre_mer_500m():
     filepath = '/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy'
     return np.load(filepath)
 
-def terre_mer(y, ind_terre_mer):
-    y_terre, y_mer = np.zeros(y.shape), np.zeros(y.shape)
-    for i_ech in range(y.shape[0]):
-        y_terre[i_ech, :, :] = y[i_ech, :, :] * ind_terre_mer
-        y_mer[i_ech, :, :]   = y[i_ech, :, :] * (1 - ind_terre_mer)
-    return y_terre, y_mer
 
 def get_indices_baseline(size_y_pred):
     indices = []
@@ -23,41 +18,49 @@ def get_indices_baseline(size_y_pred):
 
 
 
-def rmse(a, b):
-        return np.sqrt(np.mean((a - b)**2))
-
 class Results():
 
-    def __init__(self, p, i_p, X_test, y_test, y_pred, baseline=[]): # /!\ jours chargement de la baseline
+    def __init__(self, p, i_p, data_X_test, data_y_test, data_y_pred, data_baseline): # /!\ jours chargement de la baseline
         self.p = p
         self.i_p = i_p
+        self.data_X_test = data_X_test.copy()
+        self.data_y_test = data_y_test.copy()
+        self.data_y_pred = data_y_pred.copy()
+        self.data_baseline = data_baseline.copy()
+
+        X_test = np.reshape(data_X_test.X, (len(data_X_test.dates), len(data_X_test.echeances), data_X_test.X.shape[1], data_X_test.X.shape[2], data_X_test.X.shape[3]))
+        y_test = np.reshape(data_y_test.y, (len(data_y_test.dates), len(data_y_test.echeances), data_y_test.y.shape[1], data_y_test.y.shape[2]))
+        y_pred = np.reshape(data_y_pred.y, (len(data_y_pred.dates), len(data_y_pred.echeances), data_y_pred.y.shape[1], data_y_pred.y.shape[2]))
+        baseline = np.reshape(data_baseline.baseline, (len(data_baseline.dates), len(data_baseline.echeances), data_baseline.baseline.shape[1], data_baseline.baseline.shape[2]))
+
         self.X_test = X_test
         self.y_test = y_test
         self.y_pred = y_pred
         self.baseline = baseline
 
 
-    def plot_i(self, i, output_dir, base=False):
+    def plot_d_ech(self, i_d, i_ech, output_dir, base=False):
         if base:
-            fig, axs = plt.subplots(nrows=1,ncols=4, figsize = (25, 5))
-            im = axs[0].imshow(self.X_test[i, :, :, self.i_p])
-            im = axs[1].imshow(self.y_pred[i, :, :])
-            im = axs[2].imshow(self.y_test[i, :, :])
-            im = axs[3].imshow(self.baseline[i, :, :])
+            fig, axs = plt.subplots(nrows=1,ncols=4, figsize = (28, 7))
+            im = axs[0].imshow(self.X_test[i_d, 2*i_ech, :, :, self.i_p])
+            im = axs[1].imshow(self.baseline[i_d, i_ech, :, :])
+            im = axs[2].imshow(self.y_pred[i_d, 2*i_ech, :, :])
+            im = axs[3].imshow(self.y_test[i_d, 2*i_ech, :, :])
 
             axs[0].set_title('X_test')
             axs[1].set_title('baseline')
             axs[2].set_title('y_pred')
             axs[3].set_title('y_test')
-            
+
             fig.colorbar(im, ax=axs, label=self.p)
 
-            plt.savefig(output_dir + 'results_' + str(i) + '_' + self.p + '.png')
-        else :
-            fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (15, 4))
-            im = axs[0].imshow(self.X_test[i, :, :, self.i_p])
-            im = axs[1].imshow(self.y_pred[i, :, :])
-            im = axs[2].imshow(self.y_test[i, :, :])
+            plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
+
+        else:
+            fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 7))
+            im = axs[0].imshow(self.X_test[i_d, i_ech, :, :, self.i_p])
+            im = axs[1].imshow(self.y_pred[i_d, i_ech, :, :])
+            im = axs[2].imshow(self.y_test[i_d, i_ech, :, :])
 
             axs[0].set_title('X_test')
             axs[1].set_title('y_pred')
@@ -65,55 +68,87 @@ class Results():
 
             fig.colorbar(im, ax=axs, label=self.p)
 
-            plt.savefig(output_dir + 'results_' + str(i) + '_' + self.p + '.png')
+            plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
+
 
 
     def plot_all(self, output_dir, base=False):
         if base:
-            for i in range(self.baseline.shape[0]):
-                self.plot_i(i, output_dir, base=base)
+            for i_d in range(len(self.data_y_test.dates)):
+                for i_ech in range(len(self.data_baseline.echeances)):
+                    self.plot_d_ech(i_d, i_ech, output_dir, base=base)
         else:
-            for i in range(self.y_pred.shape[0]):
-                self.plot_i(i, output_dir, base=base)
+            for i_d in range(len(self.data_y_test.dates)):
+                for i in range(len(self.data_y_pred.exheances)):
+                    self.plot_i(i, output_dir, base=base)
 
-    def plot_20(self, output_dir, base=False):
+    def plot_firsts(self, output_dir, base=False):
         if base:
-            indices = get_indices_baseline(self.y_pred.shape[0])
-            indices = [indices[randint(0, len(indices))] for i in range(20)]
-            for i in indices:
-                self.plot_i(i, output_dir, base=base)
+            for i_d in range(5):
+                for i_ech in range(len(self.data_baseline.echeances)):
+                    self.plot_d_ech(i_d, i_ech, output_dir, base=base)
         else:
-            indices = [randint(0, self.y_pred.shape[0]) for i in range(20)]
-            for i in indices:
-                self.plot_i(i, output_dir, base=base)
+            for i_d in range(5):
+                for i in range(len(self.data_y_pred.exheances)):
+                    self.plot_i(i, output_dir, base=base)
 
-    def metric(self, metric):
-        indices = get_indices_baseline(self.y_pred.shape[0])
-        metric_global = metric(self.y_pred, self.y_test)
+    def rmse_global(self):
+        rmse_baseline_matrix = np.zeros(self.baseline.shape)
+        rmse_pred_matrix = np.zeros(self.y_pred.shape)
 
-        ind_terre_mer = get_ind_terre_mer_500m()
-        y_test_terre, y_test_mer = terre_mer(self.y_test, ind_terre_mer)
-        y_pred_terre, y_pred_mer = terre_mer(self.y_pred, ind_terre_mer)
-        baseline_terre, baseline_mer = terre_mer(self.baseline, ind_terre_mer)
+        rmse_baseline_global = []
+        rmse_pred_global = []
 
-        metric_mer = metric(y_pred_mer, y_test_mer)
-        metric_terre = metric(y_pred_terre, y_test_terre)
+        for i_d in range(self.baseline.shape[0]):
+            for i_ech in range(self.baseline.shape[1]):
+                rmse_baseline_matrix[i_d, i_ech, :, :] = (self.baseline[i_d, i_ech, :, :] - self.y_test[i_d, i_ech, :, :])**2
+                rmse_baseline_global.append(np.mean(rmse_baseline_matrix[i_d, i_ech, :, :]))
+            for i_ech in range(self.y_pred.shape[1]):
+                rmse_pred_matrix[i_d, i_ech, :, :] = (self.y_pred[i_d, i_ech, :, :] - self.y_test[i_d, i_ech, :, :])**2
+                rmse_pred_global.append(np.mean(rmse_pred_matrix[i_d, i_ech, :, :]))
+
+        return rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global
         
-        return metric_global, metric_terre, metric_mer
-
-    def score(self, metric):
-        indices = get_indices_baseline(self.y_pred.shape[0])
-        score_global = metric(self.y_pred, self.y_test) / metric(self.baseline, self.y_test[indices, :, :])
-
+    def rmse_terre(self):
+        rmse_baseline_terre_matrix = np.zeros(self.baseline.shape)
+        rmse_pred_terre_matrix = np.zeros(self.y_pred.shape)
+        rmse_baseline_terre_global = []
+        rmse_pred_terre_global = []
+        rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = self.rmse_global()
         ind_terre_mer = get_ind_terre_mer_500m()
-        y_test_terre, y_test_mer = terre_mer(self.y_test, ind_terre_mer)
-        y_pred_terre, y_pred_mer = terre_mer(self.y_pred, ind_terre_mer)
-        baseline_terre, baseline_mer = terre_mer(self.baseline, ind_terre_mer)
-
-
-        score_mer = metric(y_pred_mer, y_test_mer) / metric(baseline_mer, y_test_mer[indices, :, :])
-        score_terre = metric(y_pred_terre, y_test_terre) / metric(baseline_terre, y_test_terre[indices, :, :])
         
-        return score_global, score_terre, score_mer
+        for i_d in range(self.baseline.shape[0]):
+            for i_ech in range(self.baseline.shape[1]):
+                rmse_baseline_terre_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                rmse_baseline_terre_global.append(np.mean(rmse_baseline_terre_global))
+            for i_ech in range(self.y_pred.shape[1]):
+                rmse_pred_terre_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                rmse_pred_terre_global.append(np.mean(rmse_pred_terre_global))
+
+        return rmse_baseline_terre_matrix, rmse_pred_terre_matrix, rmse_baseline_terre_global, rmse_pred_terre_global
+        
+
+    def rmse_mer(self):
+        rmse_baseline_mer_matrix = np.zeros(self.baseline.shape)
+        rmse_pred_mer_matrix = np.zeros(self.y_pred.shape)
+        rmse_baseline_mer_global = []
+        rmse_pred_mer_global = []
+        rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = self.rmse_global()
+        ind_terre_mer = get_ind_terre_mer_500m()
+        
+        for i_d in range(self.baseline.shape[0]):
+            for i_ech in range(self.baseline.shape[1]):
+                rmse_baseline_mer_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                rmse_baseline_mer_global.append(np.mean(rmse_baseline_mer_global))
+            for i_ech in range(self.y_pred.shape[1]):
+                rmse_pred_mer_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                rmse_pred_mer_global.append(np.mean(rmse_pred_mer_global))
+
+        return rmse_baseline_mer_matrix, rmse_pred_mer_matrix, rmse_baseline_mer_global, rmse_pred_mer_global
+
+
+
+        
+
 
     
