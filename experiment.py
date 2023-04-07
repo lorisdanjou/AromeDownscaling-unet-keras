@@ -26,7 +26,8 @@ dates_valid = rangex(['2022020100-2022022800-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/cape/'
+# output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/cape/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 
 '''
@@ -100,7 +101,7 @@ print('unet creation ok')
 '''
 Training
 '''
-LR, batch_size, epochs = 0.005, 32, 64
+LR, batch_size, epochs = 0.005, 32, 1
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training

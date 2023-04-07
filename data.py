@@ -258,7 +258,7 @@ class y(Data):
         self.y = self.y.reshape((len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1]))
 
     def copy(self):
-        copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
+        copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.missing_days)
         copy.domain_shape = self.domain_shape
         copy.load()
         return copy
