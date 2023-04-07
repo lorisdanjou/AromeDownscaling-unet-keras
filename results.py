@@ -72,59 +72,105 @@ class Results():
                 for i in range(len(self.y_pred.echeances)):
                     self.plot_i(i, output_dir, base=base)
 
-    def rmse_global(self):
-        rmse_baseline_matrix = np.zeros(self.baseline.y.shape)
-        rmse_pred_matrix = np.zeros(self.y_pred.y.shape)
+    def mse_global(self):
+        mse_baseline_matrix = np.zeros(self.baseline.y.shape)
+        mse_pred_matrix = np.zeros(self.y_pred.y.shape)
 
-        rmse_baseline_global = []
-        rmse_pred_global = []
+        mse_baseline_global = []
+        mse_pred_global = []
 
         for i_d in range(self.baseline.y.shape[0]):
             for i_ech in range(self.baseline.y.shape[1]):
-                rmse_baseline_matrix[i_d, i_ech, :, :] = (self.baseline.y[i_d, i_ech, :, :] - self.y_test.y[i_d, i_ech, :, :])**2
-                rmse_baseline_global.append(np.mean(rmse_baseline_matrix[i_d, i_ech, :, :]))
+                mse_baseline_matrix[i_d, i_ech, :, :] = (self.baseline.y[i_d, i_ech, :, :] - self.y_test.y[i_d, i_ech, :, :])**2
+                mse_baseline_global.append(np.mean(mse_baseline_matrix[i_d, i_ech, :, :]))
             for i_ech in range(self.y_pred.y.shape[1]):
-                rmse_pred_matrix[i_d, i_ech, :, :] = (self.y_pred.y[i_d, i_ech, :, :] - self.y_test.y[i_d, i_ech, :, :])**2
-                rmse_pred_global.append(np.mean(rmse_pred_matrix[i_d, i_ech, :, :]))
+                mse_pred_matrix[i_d, i_ech, :, :] = (self.y_pred.y[i_d, i_ech, :, :] - self.y_test.y[i_d, i_ech, :, :])**2
+                mse_pred_global.append(np.mean(mse_pred_matrix[i_d, i_ech, :, :]))
 
-        return rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global
+        return mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global
         
-    def rmse_terre(self):
-        rmse_baseline_terre_matrix = np.zeros(self.baseline.y.shape)
-        rmse_pred_terre_matrix = np.zeros(self.y_pred.y.shape)
-        rmse_baseline_terre_global = []
-        rmse_pred_terre_global = []
-        rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = self.rmse_global()
+    def mse_terre(self):
+        mse_baseline_terre_matrix = np.zeros(self.baseline.y.shape)
+        mse_pred_terre_matrix = np.zeros(self.y_pred.y.shape)
+        mse_baseline_terre_global = []
+        mse_pred_terre_global = []
+        mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = self.mse_global()
         ind_terre_mer = get_ind_terre_mer_500m()
         
         for i_d in range(self.baseline.y.shape[0]):
             for i_ech in range(self.baseline.y.shape[1]):
-                rmse_baseline_terre_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_baseline_terre_global.append(np.mean(rmse_baseline_terre_matrix[i_d, i_ech, :, :]))
+                mse_baseline_terre_matrix[i_d, i_ech, :, :] = mse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                mse_baseline_terre_global.append(np.mean(mse_baseline_terre_matrix[i_d, i_ech, :, :]))
             for i_ech in range(self.y_pred.y.shape[1]):
-                rmse_pred_terre_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_pred_terre_global.append(np.mean(rmse_pred_terre_matrix[i_d, i_ech, :, :]))
+                mse_pred_terre_matrix[i_d, i_ech, :, :] = mse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
+                mse_pred_terre_global.append(np.mean(mse_pred_terre_matrix[i_d, i_ech, :, :]))
 
-        return rmse_baseline_terre_matrix, rmse_pred_terre_matrix, rmse_baseline_terre_global, rmse_pred_terre_global
+        return mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global
         
 
-    def rmse_mer(self):
-        rmse_baseline_mer_matrix = np.zeros(self.baseline.y.shape)
-        rmse_pred_mer_matrix = np.zeros(self.y_pred.y.shape)
-        rmse_baseline_mer_global = []
-        rmse_pred_mer_global = []
-        rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = self.rmse_global()
+    def mse_mer(self):
+        mse_baseline_mer_matrix = np.zeros(self.baseline.y.shape)
+        mse_pred_mer_matrix = np.zeros(self.y_pred.y.shape)
+        mse_baseline_mer_global = []
+        mse_pred_mer_global = []
+        mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = self.mse_global()
         ind_terre_mer = get_ind_terre_mer_500m()
         
         for i_d in range(self.baseline.y.shape[0]):
             for i_ech in range(self.baseline.y.shape[1]):
-                rmse_baseline_mer_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
-                rmse_baseline_mer_global.append(np.mean(rmse_baseline_mer_matrix[i_d, i_ech, :, :]))
+                mse_baseline_mer_matrix[i_d, i_ech, :, :] = mse_baseline_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
+                mse_baseline_mer_global.append(np.mean(mse_baseline_mer_matrix[i_d, i_ech, :, :]))
             for i_ech in range(self.y_pred.y.shape[1]):
-                rmse_pred_mer_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
-                rmse_pred_mer_global.append(np.mean(rmse_pred_mer_matrix[i_d, i_ech, :, :]))
+                mse_pred_mer_matrix[i_d, i_ech, :, :] = mse_pred_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
+                mse_pred_mer_global.append(np.mean(mse_pred_mer_matrix[i_d, i_ech, :, :]))
 
-        return rmse_baseline_mer_matrix, rmse_pred_mer_matrix, rmse_baseline_mer_global, rmse_pred_mer_global
+        return mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global
+
+
+    def plot_distrib_rmse(self, output_dir):
+        mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = self.mse_global()
+        mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global = self.mse_terre()
+        mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global = self.mse_mer()
+
+        D_baseline = np.zeros((len(mse_baseline_global), 3))
+        for i in range(len(mse_baseline_global)):
+            D_baseline[i, 0] = np.sqrt(mse_baseline_global[i])
+            D_baseline[i, 1] = np.sqrt(mse_baseline_terre_global[i])
+            D_baseline[i, 2] = np.sqrt(mse_baseline_mer_global[i])
+
+        D_pred = np.zeros((len(mse_pred_global), 3))
+        for i in range(len(mse_pred_global)):
+            D_pred[i, 0] = np.sqrt(mse_pred_global[i])
+            D_pred[i, 1] = np.sqrt(mse_pred_terre_global[i])
+            D_pred[i, 2] = np.sqrt(mse_pred_mer_global[i])
+
+        labels = ['global', 'terre', 'mer']
+
+        fig, axs = plt.subplots(1, 2)
+
+        # plt.grid()
+        VP = axs[0].boxplot(D_baseline, positions=[2,4,6], widths=1.5, patch_artist=True,
+                        showmeans=False, showfliers=False,
+                        medianprops={"color": "white", "linewidth": 0.5},
+                        boxprops={"facecolor": "C0", "edgecolor": "white",
+                                "linewidth": 0.5},
+                        whiskerprops={"color": "C0", "linewidth": 1.5},
+                        capprops={"color": "C0", "linewidth": 1.5},
+                        labels=labels)
+
+        VP = axs[1].boxplot(D_pred, positions=[2,4,6], widths=1.5, patch_artist=True,
+                        showmeans=False, showfliers=False,
+                        medianprops={"color": "white", "linewidth": 0.5},
+                        boxprops={"facecolor": "C0", "edgecolor": "white",
+                                "linewidth": 0.5},
+                        whiskerprops={"color": "C0", "linewidth": 1.5},
+                        capprops={"color": "C0", "linewidth": 1.5},
+                        labels=labels)
+
+        axs[0].set_title('RMSE distribution (baseline)')
+        axs[1].set_title('RMSE distribution (y_pred)')
+
+        plt.savefig(output_dir + 'distribution_rmse.png')
 
 
 

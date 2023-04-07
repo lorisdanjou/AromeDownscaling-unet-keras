@@ -47,18 +47,23 @@ y_pred.y = np.load(working_dir + 'y_pred.npy')
 results = Results('t2m', 0, X_test, y_test, y_pred, baseline)
 results.plot_firsts(working_dir, base=True)
 
-rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = results.rmse_global()
-rmse_baseline_terre_matrix, rmse_pred_terre_matrix, rmse_baseline_terre_global, rmse_pred_terre_global = results.rmse_terre()
-rmse_baseline_mer_matrix, rmse_pred_mer_matrix, rmse_baseline_mer_global, rmse_pred_mer_global = results.rmse_mer()
+mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = results.mse_global()
+mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global = results.mse_terre()
+mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global = results.mse_mer()
 
 print('rmse:')
 print('  global:')
-print('    baseline : ' + str(np.mean(rmse_baseline_global)))
-print('    prediction : ' + str(np.mean(rmse_pred_global)))
+print('    baseline : ' + str(np.sqrt(np.mean(mse_baseline_global))))
+print('    prediction : ' + str(np.sqrt(np.mean(mse_pred_global))))
 print('  terre:')
-print('    baseline : ' + str(np.mean(rmse_baseline_terre_global)))
-print('    prediction : ' + str(np.mean(rmse_pred_terre_global)))
+print('    baseline : ' + str(np.sqrt(np.mean(mse_baseline_terre_global))))
+print('    prediction : ' + str(np.sqrt(np.mean(mse_pred_terre_global))))
 print('  mer:')
-print('    baseline : ' + str(np.mean(rmse_baseline_mer_global)))
-print('    prediction : ' + str(np.mean(rmse_pred_mer_global)))
+print('    baseline : ' + str(np.sqrt(np.mean(mse_baseline_mer_global))))
+print('    prediction : ' + str(np.sqrt(np.mean(mse_pred_mer_global))))
+
+
+results.plot_distrib_rmse(working_dir)
+
+
 

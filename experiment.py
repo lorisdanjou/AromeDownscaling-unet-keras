@@ -19,7 +19,7 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params = ['t2m', 'cape']
+params = ['t2m']
 static_fields = []
 dates_train = rangex(['2021010100-2021033100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H']) # à modifier
