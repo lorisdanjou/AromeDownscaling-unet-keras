@@ -102,18 +102,27 @@ class X(Data):
                         self.X[i_d, i_ech, :, :, len(self.params)+i_s] = np.load(filepath_static)
             except FileNotFoundError:
                 print('missing day : ' + d.isoformat())
-                self.missing_days.append(d)
+                self.missing_days.append(i_d)
         # print('initial X shape : ' + str(X.shape))
+
+    def delete_missing_days(self, y):
+        for i_d in y.missing_days:
+            self.X[i_d, :, :, :, :] = np.zeros((self.X.shape[1], self.X.shape[2], self.X.shape[3], self.X.shape[4]))
+            if i_d not in self.missing_days:
+                self.missing_days.append(i_d)
+
 
     def reshape_4(self):
         # new shape of the data : X[date/ech, x, y, param]
         self.X = self.X.reshape((-1, self.domain_shape[0], self.domain_shape[1], len(self.params)+len(self.static_fields)))
         # print('reshaped (4) X shape : ' + str(X.shape))
 
+
     def reshape_5(self):
         # new shape of the data : X[date/ech, x, y, param]
         self.X = self.X.reshape((len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1], len(self.params)+len(self.static_fields)))
         # print('reshaped (5) X shape : ' + str(X.shape))
+
 
     def copy(self):
         copy = X(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
@@ -224,8 +233,20 @@ class y(Data):
                         self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
                 except FileNotFoundError:
                     print('missing day' + d.isoformat())
-                    self.missing_days.append(d)
+                    self.missing_days.append(i_d)
         # print('initial y shape : ' + str(y.shape))
+    
+    def delete_missing_days(self, y):
+        for i_d in y.missing_days:
+            self.y[i_d, :, :, :] = np.zeros((self.y.shape[1], self.y.shape[2], self.y.shape[3]))
+            if i_d not in self.missing_days:
+                self.missing_days.append(i_d)
+
+    def delete_missing_days(self, X):
+        for i_d in X.missing_days:
+            self.y[i_d, :, :, :] = np.zeros((self.X.shape[1], self.X.shape[2], self.X.shape[3]))
+            if i_d not in self.missing_days:
+                self.missing_days.append(i_d)
 
     def reshape_3(self):
         # new shape of the data : y[date/ech, x, y]

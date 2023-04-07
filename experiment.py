@@ -39,6 +39,9 @@ y_train = y(dates_train, echeances, data_train_location, data_static_location, p
 y_train.load()
 y_train.reshape_3()
 
+X_train.delete_missing_days(y_train)
+y_train.delete_missing_days(X_train)
+
 X_valid = X(dates_valid, echeances, data_valid_location, data_static_location, params, static_fields=static_fields, resample=resample, missing_days=[])
 X_valid.load()
 X_valid.reshape_4()
@@ -46,12 +49,18 @@ y_valid = y(dates_valid, echeances, data_valid_location, data_static_location, p
 y_valid.load()
 y_valid.reshape_3()
 
+X_valid.delete_missing_days(y_valid)
+y_valid.delete_missing_days(X_valid)
+
 X_test = X(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields, resample=resample, missing_days=[])
 X_test.load()
 X_test.reshape_4()
 y_test = y(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields, missing_days=[])
 y_test.load()
 y_test.reshape_3()
+
+X_test.delete_missing_days(y_test)
+y_test.delete_missing_days(X_test)
 
 
 '''
@@ -136,8 +145,9 @@ Prediction
 y_pred = y_test.copy()
 y_pred.y = unet.predict(X_test.X)
 y_pred.y = np.reshape(y_pred, (y_pred.y.shape[0], y_pred.y.shape[1], y_pred.y.shape[2]))
-y_pred.y = y_pred
-np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
+y_pred.delete_missing_days(y_test)
+y_pred.delete_missing_days(y_pred)
+np.save(output_dir + 'y_pred_model.npy', y_pred.y, allow_pickle=True)
 
 
 '''
