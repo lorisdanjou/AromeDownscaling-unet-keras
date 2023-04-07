@@ -74,6 +74,7 @@ X_valid.pad()
 y_valid.pad()
 
 X_test.pad()
+y_test.pad()
 
 max_X_train, max_y_train = X_train.normalize(), y_train.normalize()
 max_X_valid, max_y_valid = X_valid.normalize(), y_valid.normalize()
@@ -101,7 +102,7 @@ print('unet creation ok')
 '''
 Training
 '''
-LR, batch_size, epochs = 0.005, 32, 1
+LR, batch_size, epochs = 0.005, 32, 64
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -146,8 +147,6 @@ Prediction
 y_pred = y_test.copy()
 y_pred.y = unet.predict(X_test.X)
 y_pred.y = np.reshape(y_pred.y, (y_pred.y.shape[0], y_pred.y.shape[1], y_pred.y.shape[2]))
-y_pred.delete_missing_days(y_test)
-y_pred.delete_missing_days(y_pred)
 np.save(output_dir + 'y_pred_model.npy', y_pred.y, allow_pickle=True)
 
 
@@ -158,6 +157,12 @@ Post-processing
 y_test.destandardize(mean_y_test,  std_y_test)
 y_test.denormalize(max_y_test)
 y_test.crop()
+y_test.reshape_4()
+
+X_test.destandardize(mean_X_test, std_X_test)
+X_test.denormalize(max_X_test)
+X_test.crop()
+X_test.reshape_5()
 
 # Pred:
 # /!\ indice du paramètre d'intérêt
@@ -166,6 +171,11 @@ mean_y_pred,  std_y_pred  = mean_X_test[:, 0],  std_X_test[:, 0]
 y_pred.destandardize(mean_y_pred,  std_y_pred)
 y_pred.denormalize(max_y_pred)
 y_pred.crop()
+
+y_pred.reshape_4()
+
+# y_pred.delete_missing_days(y_test)
+# y_pred.delete_missing_days(y_pred)
 
 np.save(output_dir + 'y_pred.npy', y_pred.y, allow_pickle=True)
 np.save(output_dir + 'X_test.npy', X_test.X, allow_pickle=True)

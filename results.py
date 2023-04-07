@@ -100,10 +100,10 @@ class Results():
         for i_d in range(self.baseline.y.shape[0]):
             for i_ech in range(self.baseline.y.shape[1]):
                 rmse_baseline_terre_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_baseline_terre_global.append(np.mean(rmse_baseline_terre_global))
+                rmse_baseline_terre_global.append(np.mean(rmse_baseline_terre_matrix[i_d, i_ech, :, :]))
             for i_ech in range(self.y_pred.y.shape[1]):
                 rmse_pred_terre_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_pred_terre_global.append(np.mean(rmse_pred_terre_global))
+                rmse_pred_terre_global.append(np.mean(rmse_pred_terre_matrix[i_d, i_ech, :, :]))
 
         return rmse_baseline_terre_matrix, rmse_pred_terre_matrix, rmse_baseline_terre_global, rmse_pred_terre_global
         
@@ -118,11 +118,11 @@ class Results():
         
         for i_d in range(self.baseline.y.shape[0]):
             for i_ech in range(self.baseline.y.shape[1]):
-                rmse_baseline_mer_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_baseline_mer_global.append(np.mean(rmse_baseline_mer_global))
+                rmse_baseline_mer_matrix[i_d, i_ech, :, :] = rmse_baseline_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
+                rmse_baseline_mer_global.append(np.mean(rmse_baseline_mer_matrix[i_d, i_ech, :, :]))
             for i_ech in range(self.y_pred.y.shape[1]):
-                rmse_pred_mer_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * ind_terre_mer
-                rmse_pred_mer_global.append(np.mean(rmse_pred_mer_global))
+                rmse_pred_mer_matrix[i_d, i_ech, :, :] = rmse_pred_matrix[i_d, i_ech, :, :] * (1 - ind_terre_mer)
+                rmse_pred_mer_global.append(np.mean(rmse_pred_mer_matrix[i_d, i_ech, :, :]))
 
         return rmse_baseline_mer_matrix, rmse_pred_mer_matrix, rmse_baseline_mer_global, rmse_pred_mer_global
 

@@ -10,11 +10,13 @@ data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
 data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
 data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/'
+model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
 '''
 Setup
 '''
-params = ['t2m']
+# params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
+params = ['t2m', 'cape']
 static_fields = []
 dates_train = rangex(['2021010100-2021033100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H']) # à modifier
@@ -22,25 +24,41 @@ dates_test = rangex(['2022030100-2022033100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
 echeances_baseline = range(6, 37, 6)
-
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/normalized_standardized/'
-X_test = np.load(working_dir + 'X_test.npy')
-y_test = np.load(working_dir + 'y_test.npy') 
-y_pred = np.load(working_dir + 'y_pred.npy')
-y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 
-y_pred = y(dates_test, echeances, data_test_location, data_static_location, params, )
-y_pred.y = y_pred
-y_test = y(dates_test, echeances, data_test_location, data_static_location, params)
-X_test = Data_X(dates_test, echeances, data_test_location, data_static_location, params)
-data_baseline = Data_baseline(dates_test, echeances_baseline, baseline_location, data_static_location, params)
+y_pred = y(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+y_test = y(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields)
+X_test = X(dates_test, echeances, data_test_location, data_static_location, params, static_fields=static_fields, resample=resample)
+baseline = y(dates_test, echeances_baseline, baseline_location, data_static_location, params, base=True)
+baseline.load()
 
-results = Results('t2m', 0, data_X_test, data_y_test, data_y_pred, data_baseline)
+X_test.X = np.load(working_dir + 'X_test.npy')
+y_test.y = np.load(working_dir + 'y_test.npy')
+y_pred.y = np.load(working_dir + 'y_pred.npy')
+
+
+# print('y_pred shape : ' + str(y_pred.y.shape))
+# print('y_test shape : ' + str(y_test.y.shape))
+# print('baseline shape : ' + str(baseline.y.shape))
+# print('X_test shape : ' + str(X_test.X.shape))
+
+
+results = Results('t2m', 0, X_test, y_test, y_pred, baseline)
 results.plot_firsts(working_dir, base=True)
 
 rmse_baseline_matrix, rmse_pred_matrix, rmse_baseline_global, rmse_pred_global = results.rmse_global()
+rmse_baseline_terre_matrix, rmse_pred_terre_matrix, rmse_baseline_terre_global, rmse_pred_terre_global = results.rmse_terre()
+rmse_baseline_mer_matrix, rmse_pred_mer_matrix, rmse_baseline_mer_global, rmse_pred_mer_global = results.rmse_mer()
+
 print('rmse:')
-print('baseline : ' + str(np.mean(rmse_baseline_global)))
-print('prediction : ' + str(np.mean(rmse_pred_global)))
+print('  global:')
+print('    baseline : ' + str(np.mean(rmse_baseline_global)))
+print('    prediction : ' + str(np.mean(rmse_pred_global)))
+print('  terre:')
+print('    baseline : ' + str(np.mean(rmse_baseline_terre_global)))
+print('    prediction : ' + str(np.mean(rmse_pred_terre_global)))
+print('  mer:')
+print('    baseline : ' + str(np.mean(rmse_baseline_mer_global)))
+print('    prediction : ' + str(np.mean(rmse_pred_mer_global)))
 

@@ -127,7 +127,7 @@ class X(Data):
     def copy(self):
         copy = X(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
         copy.domain_shape = self.domain_shape
-        copy.load()
+        copy.X = self.X
         return copy
 
 
@@ -212,8 +212,8 @@ class y(Data):
 
     def load(self):
         # initial shape of the data: y[date, ech, x, y]
-        for i_d, d in enumerate(self.dates):
-            if self.base:
+        if self.base:
+            for i_d, d in enumerate(self.dates):
                 try:
                     filepath_y = self.data_location + 'GG9B_' + d.isoformat() + 'Z_t2m.npy'
                     if exists(filepath_y):
@@ -224,7 +224,8 @@ class y(Data):
                 except FileNotFoundError:
                     print('missing day : ' + d.isoformat())
                     self.missing_days.append(d)
-            else:
+        else:
+            for i_d, d in enumerate(self.dates):
                 try:
                     filepath_y = self.data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
                     if exists(filepath_y):
@@ -233,7 +234,7 @@ class y(Data):
                         filepath_y = self.data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
                         self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
                 except FileNotFoundError:
-                    print('missing day' + d.isoformat())
+                    print('missing day : ' + d.isoformat())
                     self.missing_days.append(i_d)
         # print('initial y shape : ' + str(y.shape))
     
@@ -258,9 +259,9 @@ class y(Data):
         self.y = self.y.reshape((len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1]))
 
     def copy(self):
-        copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.missing_days)
+        copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.missing_days, base=self.base)
         copy.domain_shape = self.domain_shape
-        copy.load()
+        copy.y = self.y
         return copy
 
 
