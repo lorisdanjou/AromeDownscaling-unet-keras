@@ -33,7 +33,7 @@ y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
 data_y_pred = Data_y(dates_test, echeances, data_test_location, data_static_location, params)
 data_y_pred.y = y_pred
 data_y_test = Data_y(dates_test, echeances, data_test_location, data_static_location, params)
-data_X_test = Data_X(dates_test, echeances, data_test_location, data_static_location, params)
+X_test = Data_X(dates_test, echeances, data_test_location, data_static_location, params)
 data_baseline = Data_baseline(dates_test, echeances_baseline, baseline_location, data_static_location, params)
 
 results = Results('t2m', 0, data_X_test, data_y_test, data_y_pred, data_baseline)

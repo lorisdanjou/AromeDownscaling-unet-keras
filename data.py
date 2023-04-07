@@ -57,14 +57,14 @@ Data Loader
 '''
 class Data():
 
-    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
+    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], missing_days=[]):
         self.dates = dates
         self.echeances = echeances
         self.data_location = data_location
         self.data_static_location = data_static_location
         self.params = params
         self.static_fields = static_fields
-        self.resample = resample
+        self.missing_days = missing_days
 
 
     def copy(self):
@@ -73,27 +73,26 @@ class Data():
 
 
 
-class Data_X(Data):
+class X(Data):
 
-    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
+    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r', missing_days=[]):
+        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, missing_days=missing_days)
 
-        # Load X
-        shape_500m = get_shape_500m()
-        shape_2km5 = get_shape_2km5(resample=self.resample)
+        self.domain_shape = get_shape_2km5(resample=self.resample)
+        self.resample = resample
+        self.X = np.zeros(shape=[len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1], len(self.params) + len(self.static_fields)], dtype=np.float32)
 
+    def load(self):
         # initial shape of the data: X[date, ech, x, y, param]
-        X = np.zeros(shape=[len(self.dates), len(self.echeances), shape_2km5[0], shape_2km5[1], len(self.params) + len(self.static_fields)], dtype=np.float32)
-
         for i_d, d in enumerate(self.dates):
             try:
                 for i_p, p in enumerate(self.params):
                     if self.resample == 'c':
                         filepath_X = self.data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
-                        X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                        self.X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                     else:
                         filepath_X = self.data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
-                        X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                        self.X[i_d, :, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                 for i_s, s in enumerate(self.static_fields):
                     for i_ech, ech in enumerate(self.echeances):
                         if self.resample == 'r':
@@ -101,21 +100,25 @@ class Data_X(Data):
                             # filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
                         else:
                             filepath_static = self.data_static_location + 'static_oper_c_' + s + '.npy'
-                        X[i_d, i_ech, :, :, len(self.params)+i_s] = np.load(filepath_static)
+                        self.X[i_d, i_ech, :, :, len(self.params)+i_s] = np.load(filepath_static)
             except FileNotFoundError:
-                print('missing day')
+                print('missing day' + d.isoformat())
+                self.missing_days.append(d)
+        # print('initial X shape : ' + str(X.shape))
 
-        print('initial X shape : ' + str(X.shape))
-
+    def reshape_4(self):
         # new shape of the data : X[date/ech, x, y, param]
-        X = X.reshape((-1, shape_2km5[0], shape_2km5[1], len(self.params)+len(self.static_fields)))
+        self.X = self.X.reshape((-1, self.domain_shape[0], self.domain_shape[1], len(self.params)+len(self.static_fields)))
+        # print('reshaped (4) X shape : ' + str(X.shape))
 
-        print('reshaped X shape : ' + str(X.shape))
-
-        self.X = X
+    def reshape_5(self):
+        # new shape of the data : X[date/ech, x, y, param]
+        self.X = self.X.reshape((len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1], len(self.params)+len(self.static_fields)))
+        # print('reshaped (5) X shape : ' + str(X.shape))
 
     def copy(self):
-        copy = Data_X(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample)
+        copy = X(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
+        copy.domain_shape = self.domain_shape
         return copy
 
 
@@ -190,50 +193,59 @@ class Data_X(Data):
 
 
 
-class Data_y(Data):
+class y(Data):
     
-    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
+    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], missing_days=[], base=False):
+        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, missing_days=missing_days)
+        self.domain_shape = get_shape_500m()
+        self.y = np.zeros(shape=[len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1]], dtype=np.float32)
+        self.base = base
 
-        # Load y
-        shape_500m = get_shape_500m()
-
+    def load(self):
         # initial shape of the data: y[date, ech, x, y]
-        y = np.zeros(shape=[len(self.dates), len(self.echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
-
         for i_d, d in enumerate(self.dates):
-            try:
-                filepath_y = self.data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
-                if exists(filepath_y):
-                    y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
-                else:
-                    filepath_y = self.data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
-                    y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
-            except FileNotFoundError:
-                print('missing day')
+            if self.base:
+                try:
+                    filepath_y = self.data_location + 'GG9B_' + d.isoformat() + 'Z_t2m.npy'
+                    if exists(filepath_y):
+                        self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+                    else:
+                        filepath_y = self.data_location + 'GG8A_' + d.isoformat() + 'Z_t2m.npy'
+                        self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+                except FileNotFoundError:
+                    print('missing day' + d.isoformat())
+                    self.missing_days.append(d)
+            else:
+                try:
+                    filepath_y = self.data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
+                    if exists(filepath_y):
+                        self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+                    else:
+                        filepath_y = self.data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
+                        self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
+                except FileNotFoundError:
+                    print('missing day' + d.isoformat())
+                    self.missing_days.append(d)
+        # print('initial y shape : ' + str(y.shape))
 
-        print('initial y shape : ' + str(y.shape))
-
+    def reshape_3(self):
         # new shape of the data : y[date/ech, x, y]
-        y = y.reshape((-1, shape_500m[0], shape_500m[1]))
+        self.y = self.y.reshape((-1, self.domain_shape[0], self.domain_shape[1]))
+        # print('reshaped y shape : ' + str(y.shape))
 
-        print('reshaped y shape : ' + str(y.shape))
-
-        self.y = y
+    def reshape_4(self):
+        self.y = self.y.reshape((len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1]))
 
     def copy(self):
-        copy = Data_y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample)
+        copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
+        copy.domain_shape = self.domain_shape
         return copy
 
 
     def pad(self): # adapte l'entrée pour un réseau à 4 convolutions + resample
         y1 = self.y
-
-        if self.resample == 'r':
-            y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
-            self.y = y
-        else:
-            print('data not resampled')
+        y = np.pad(y1, ((0,0), (5,5), (2,3)), mode='reflect')
+        self.y = y
 
 
     def crop(self):
@@ -290,26 +302,3 @@ class Data_y(Data):
                 y[i_ech, :, :] = y[i_ech, :, :] * std_y
             y[i_ech, :, :] = y[i_ech, :, :] + mean_y
         self.y = y
-
-
-
-class Data_baseline(Data):
-    def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
-        super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, resample=resample)
-        shape_500m = get_shape_500m()
-        baseline = np.zeros(shape=[len(self.dates), len(self.echeances), shape_500m[0], shape_500m[1]], dtype=np.float32)
-
-        for i_d, d in enumerate(self.dates):
-            try:
-                filepath = self.data_location + 'GG9B_' + d.isoformat() + 'Z_t2m.npy'
-                baseline[i_d, :, :, :] = np.load(filepath).transpose([2, 0, 1])
-            except FileNotFoundError:
-                print('missing day')
-
-        print('initial baseline shape : ' + str(baseline.shape))
-
-        baseline = baseline.reshape((-1, shape_500m[0], shape_500m[1]))
-
-        print('reshaped baseline shape : ' + str(baseline.shape))
-
-        self.baseline = baseline
