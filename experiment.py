@@ -145,7 +145,7 @@ Prediction
 '''
 y_pred = y_test.copy()
 y_pred.y = unet.predict(X_test.X)
-y_pred.y = np.reshape(y_pred, (y_pred.y.shape[0], y_pred.y.shape[1], y_pred.y.shape[2]))
+y_pred.y = np.reshape(y_pred.y, (y_pred.y.shape[0], y_pred.y.shape[1], y_pred.y.shape[2]))
 y_pred.delete_missing_days(y_test)
 y_pred.delete_missing_days(y_pred)
 np.save(output_dir + 'y_pred_model.npy', y_pred.y, allow_pickle=True)

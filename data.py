@@ -272,8 +272,7 @@ class y(Data):
 
     def crop(self):
         y = self.y
-        if self.resample == 'r':
-            y1 = y[:, 5:-5, 2:-3]
+        y1 = y[:, 5:-5, 2:-3]
         self.y = y1
 
 
