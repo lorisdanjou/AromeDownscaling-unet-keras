@@ -1,6 +1,6 @@
 import numpy as np
 from os.path import exists
-from data_manager import *
+from data import *
 from results import *
 from bronx.stdtypes.date import daterangex as rangex
 
@@ -30,9 +30,9 @@ y_pred = np.load(working_dir + 'y_pred.npy')
 y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
 
 
-data_y_pred = Data_y(dates_test, echeances, data_test_location, data_static_location, params)
-data_y_pred.y = y_pred
-data_y_test = Data_y(dates_test, echeances, data_test_location, data_static_location, params)
+y_pred = y(dates_test, echeances, data_test_location, data_static_location, params, )
+y_pred.y = y_pred
+y_test = y(dates_test, echeances, data_test_location, data_static_location, params)
 X_test = Data_X(dates_test, echeances, data_test_location, data_static_location, params)
 data_baseline = Data_baseline(dates_test, echeances_baseline, baseline_location, data_static_location, params)
 

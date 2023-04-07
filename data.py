@@ -127,6 +127,7 @@ class X(Data):
     def copy(self):
         copy = X(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
         copy.domain_shape = self.domain_shape
+        copy.load()
         return copy
 
 
@@ -259,6 +260,7 @@ class y(Data):
     def copy(self):
         copy = y(self.dates, self.echeances, self.data_location, self.data_static_location, self.params, self.static_fields, self.resample, self.missing_days)
         copy.domain_shape = self.domain_shape
+        copy.load()
         return copy
 
 
