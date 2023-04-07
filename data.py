@@ -244,7 +244,7 @@ class y(Data):
 
     def delete_missing_days(self, X):
         for i_d in X.missing_days:
-            self.y[i_d, :, :, :] = np.zeros((self.X.shape[1], self.X.shape[2], self.X.shape[3]))
+            self.y[i_d, :, :, :] = np.zeros((self.y.shape[1], self.y.shape[2], self.y.shape[3]))
             if i_d not in self.missing_days:
                 self.missing_days.append(i_d)
 
