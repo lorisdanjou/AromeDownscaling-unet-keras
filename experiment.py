@@ -4,7 +4,7 @@ from bronx.stdtypes.date import daterangex as rangex
 from make_unet import *
 import matplotlib.pyplot as plt
 from data import *
-from results import Results
+# from results import Results
 
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'

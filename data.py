@@ -77,9 +77,8 @@ class X(Data):
 
     def __init__(self, dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r', missing_days=[]):
         super().__init__(dates, echeances, data_location, data_static_location, params, static_fields=static_fields, missing_days=missing_days)
-
-        self.domain_shape = get_shape_2km5(resample=self.resample)
         self.resample = resample
+        self.domain_shape = get_shape_2km5(resample=self.resample)
         self.X = np.zeros(shape=[len(self.dates), len(self.echeances), self.domain_shape[0], self.domain_shape[1], len(self.params) + len(self.static_fields)], dtype=np.float32)
 
     def load(self):
@@ -102,7 +101,7 @@ class X(Data):
                             filepath_static = self.data_static_location + 'static_oper_c_' + s + '.npy'
                         self.X[i_d, i_ech, :, :, len(self.params)+i_s] = np.load(filepath_static)
             except FileNotFoundError:
-                print('missing day' + d.isoformat())
+                print('missing day : ' + d.isoformat())
                 self.missing_days.append(d)
         # print('initial X shape : ' + str(X.shape))
 
@@ -213,7 +212,7 @@ class y(Data):
                         filepath_y = self.data_location + 'GG8A_' + d.isoformat() + 'Z_t2m.npy'
                         self.y[i_d, :, :, :] = np.load(filepath_y).transpose([2, 0, 1])
                 except FileNotFoundError:
-                    print('missing day' + d.isoformat())
+                    print('missing day : ' + d.isoformat())
                     self.missing_days.append(d)
             else:
                 try:
