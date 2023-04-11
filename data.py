@@ -196,7 +196,7 @@ class X(Data):
                 std_X = stds_X[i_ech, i_p]
                 if std_X > 1e-6:
                     X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] * std_X
-            X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] + mean_X
+                    X[i_ech, :, :, i_p] = X[i_ech, :, :, i_p] + mean_X
 
         self.X = X
 

@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from random import *
 from data import *
 
@@ -21,33 +22,69 @@ class Results():
 
     def plot_d_ech(self, i_d, i_ech, output_dir, base=False):
         if base:
-            fig, axs = plt.subplots(nrows=1,ncols=4, figsize = (28, 7))
-            im = axs[0].imshow(self.X_test.X[i_d, 2*i_ech, :, :, self.i_p])
-            im = axs[1].imshow(self.baseline.y[i_d, i_ech, :, :])
-            im = axs[2].imshow(self.y_pred.y[i_d, 2*i_ech, :, :])
-            im = axs[3].imshow(self.y_test.y[i_d, 2*i_ech, :, :])
+            if i_ech != 0:
+                # fig, axs = plt.subplots(nrows=1,ncols=4, figsize = (28, 7))
+                # im = axs[0].imshow(self.X_test.X[i_d, 2*i_ech, :, :, self.i_p])
+                # im = axs[1].imshow(self.baseline.y[i_d, i_ech, :, :])
+                # im = axs[2].imshow(self.y_pred.y[i_d, 2*i_ech, :, :])
+                # im = axs[3].imshow(self.y_test.y[i_d, 2*i_ech, :, :])
 
-            axs[0].set_title('X_test')
-            axs[1].set_title('baseline')
-            axs[2].set_title('y_pred')
-            axs[3].set_title('y_test')
+                # axs[0].set_title('X_test')
+                # axs[1].set_title('baseline')
+                # axs[2].set_title('y_pred')
+                # axs[3].set_title('y_test')
 
-            fig.colorbar(im, ax=axs, label=self.p)
+                # fig.colorbar(im, ax=axs, label=self.p)
 
-            plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
+                # plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
+
+                fig, axs = plt.subplots(nrows=1,ncols=4, figsize = (28, 7))
+                images = []
+                data = [self.X_test.X[i_d, i_ech, :, :, self.i_p], self.baseline.y[i_d, i_ech, :, :], self.y_pred.y[i_d, i_ech, :, :], self.y_test.y[i_d, i_ech, :, :]]
+                for i in range(4):
+                    images.append(axs[i].imshow(data[i]))
+                    axs[i].label_outer()
+                vmin = min(image.get_array().min() for image in images)
+                vmax = max(image.get_array().max() for image in images)
+                norm = colors.Normalize(vmin=vmin, vmax=vmax)
+                for im in images:
+                    im.set_norm(norm)
+                axs[0].set_title('X_test')
+                axs[1].set_title('baseline')
+                axs[2].set_title('y_pred')
+                axs[3].set_title('y_test')
+                fig.colorbar(images[0], ax=axs)
+                plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
 
         else:
-            fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 7))
-            im = axs[0].imshow(self.X_test.X[i_d, i_ech, :, :, self.i_p])
-            im = axs[1].imshow(self.y_pred.y[i_d, i_ech, :, :])
-            im = axs[2].imshow(self.y_test.y[i_d, i_ech, :, :])
+            # fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 7))
+            # im = axs[0].imshow(self.X_test.X[i_d, i_ech, :, :, self.i_p])
+            # im = axs[1].imshow(self.y_pred.y[i_d, i_ech, :, :])
+            # im = axs[2].imshow(self.y_test.y[i_d, i_ech, :, :])
 
+            # axs[0].set_title('X_test')
+            # axs[1].set_title('y_pred')
+            # axs[2].set_title('y_test')
+
+            # fig.colorbar(im, ax=axs, label=self.p)
+
+            # plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
+
+            fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 7))
+            images = []
+            data = [self.baseline.y[i_d, i_ech, :, :], self.y_pred.y[i_d, 2*i_ech, :, :], self.y_test.y[i_d, 2*i_ech, :, :]]
+            for i in range(3):
+                images.append(axs[i].imshow(data[i]))
+                axs[i].label_outer()
+            vmin = min(image.get_array().min() for image in images)
+            vmax = max(image.get_array().max() for image in images)
+            norm = colors.Normalize(vmin=vmin, vmax=vmax)
+            for im in images:
+                im.set_norm(norm)
             axs[0].set_title('X_test')
             axs[1].set_title('y_pred')
             axs[2].set_title('y_test')
-
-            fig.colorbar(im, ax=axs, label=self.p)
-
+            fig.colorbar(images[0], ax=axs)
             plt.savefig(output_dir + 'results_' + str(i_d) + '_' + str(i_ech) + '_' + self.p + '.png')
 
 
@@ -144,31 +181,45 @@ class Results():
             D_pred[i, 1] = np.sqrt(mse_pred_terre_global[i])
             D_pred[i, 2] = np.sqrt(mse_pred_mer_global[i])
 
-        labels = ['global', 'terre', 'mer']
+        D = np.concatenate([D_baseline, D_pred], axis=1)
+        # labels = ['global', 'terre', 'mer']
+        labels = ['global_baseline', 'terre_baseline', 'mer_baseline', 'global_pred', 'terre_pred', 'mer_pred']
 
-        fig, axs = plt.subplots(1, 2)
+        fig, ax = plt.subplots(figsize=(10, 11))
+        plt.grid()
+        VP = ax.boxplot(D, positions=[3, 6, 9, 12, 15, 18], widths=1.5, patch_artist=True,
+                        showmeans=True, showfliers=False,
+                        medianprops={"color": "white", "linewidth": 0.5},
+                        boxprops={"facecolor": "C0", "edgecolor": "white",
+                                "linewidth": 0.5},
+                        whiskerprops={"color": "C0", "linewidth": 1.5},
+                        capprops={"color": "C0", "linewidth": 1.5},
+                        labels=labels)
+        ax.set_title('RMSE distribution')
+        ax.tick_params(axis='x', rotation=45)
 
+        # fig, axs = plt.subplots(1, 2)
         # plt.grid()
-        VP = axs[0].boxplot(D_baseline, positions=[2,4,6], widths=1.5, patch_artist=True,
-                        showmeans=False, showfliers=False,
-                        medianprops={"color": "white", "linewidth": 0.5},
-                        boxprops={"facecolor": "C0", "edgecolor": "white",
-                                "linewidth": 0.5},
-                        whiskerprops={"color": "C0", "linewidth": 1.5},
-                        capprops={"color": "C0", "linewidth": 1.5},
-                        labels=labels)
+        # VP = axs[0].boxplot(D_baseline, positions=[2,4,6], widths=1.5, patch_artist=True,
+        #                 showmeans=False, showfliers=False,
+        #                 medianprops={"color": "white", "linewidth": 0.5},
+        #                 boxprops={"facecolor": "C0", "edgecolor": "white",
+        #                         "linewidth": 0.5},
+        #                 whiskerprops={"color": "C0", "linewidth": 1.5},
+        #                 capprops={"color": "C0", "linewidth": 1.5},
+        #                 labels=labels)
 
-        VP = axs[1].boxplot(D_pred, positions=[2,4,6], widths=1.5, patch_artist=True,
-                        showmeans=False, showfliers=False,
-                        medianprops={"color": "white", "linewidth": 0.5},
-                        boxprops={"facecolor": "C0", "edgecolor": "white",
-                                "linewidth": 0.5},
-                        whiskerprops={"color": "C0", "linewidth": 1.5},
-                        capprops={"color": "C0", "linewidth": 1.5},
-                        labels=labels)
+        # VP = axs[1].boxplot(D_pred, positions=[2,4,6], widths=1.5, patch_artist=True,
+        #                 showmeans=False, showfliers=False,
+        #                 medianprops={"color": "white", "linewidth": 0.5},
+        #                 boxprops={"facecolor": "C0", "edgecolor": "white",
+        #                         "linewidth": 0.5},
+        #                 whiskerprops={"color": "C0", "linewidth": 1.5},
+        #                 capprops={"color": "C0", "linewidth": 1.5},
+        #                 labels=labels)
 
-        axs[0].set_title('RMSE distribution (baseline)')
-        axs[1].set_title('RMSE distribution (y_pred)')
+        # axs[0].set_title('RMSE distribution (baseline)')
+        # axs[1].set_title('RMSE distribution (y_pred)')
 
         plt.savefig(output_dir + 'distribution_rmse.png')
 
