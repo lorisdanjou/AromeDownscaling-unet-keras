@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from data import *
 from time import perf_counter
 
-# t0 = perf_counter()
+t0 = perf_counter()
 
 data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
 data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
@@ -20,7 +20,7 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params = ['t2m']
+params = ['t2m', 'toa']
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
@@ -28,10 +28,10 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 echeances = range(6, 37, 3)
 # output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/cape/'
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_100/t2m/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_100/toa/'
 
-# t1 = perf_counter()
-# print('setup time = ' + str(t1-t0))
+t1 = perf_counter()
+print('setup time = ' + str(t1-t0))
 
 
 '''
@@ -67,8 +67,8 @@ y_test.delete_missing_days(X_test)
 X_test.reshape_4()
 y_test.reshape_3()
 
-# t2 = perf_counter()
-# print('loading time = ' + str(t2-t1))
+t2 = perf_counter()
+print('loading time = ' + str(t2-t1))
 
 
 '''
@@ -98,8 +98,8 @@ mean_y_test, std_y_test = y_test.standardize()
 np.save(output_dir + 'X_test.npy', X_test.X, allow_pickle=True)
 np.save(output_dir + 'y_test.npy', y_test.y, allow_pickle=True)
 
-# t3 = perf_counter()
-# print('preprocessing time = ' + str(t3-t2))
+t3 = perf_counter()
+print('preprocessing time = ' + str(t3-t2))
 
 
 '''
@@ -150,8 +150,8 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.savefig(output_dir + 'Loss_curve.png')
 
-# t4 = perf_counter()
-# print('training time = ' + str(t4-t3))
+t4 = perf_counter()
+print('training time = ' + str(t4-t3))
 
 
 '''
@@ -162,8 +162,8 @@ y_pred.y = unet.predict(X_test.X)
 y_pred.y = np.reshape(y_pred.y, (y_pred.y.shape[0], y_pred.y.shape[1], y_pred.y.shape[2]))
 np.save(output_dir + 'y_pred_model.npy', y_pred.y, allow_pickle=True)
 
-# t5 = perf_counter()
-# print('predicting time = ' + str(t5-t3))
+t5 = perf_counter()
+print('predicting time = ' + str(t5-t3))
 
 
 '''
@@ -197,8 +197,8 @@ np.save(output_dir + 'y_pred.npy', y_pred.y, allow_pickle=True)
 np.save(output_dir + 'X_test.npy', X_test.X, allow_pickle=True)
 np.save(output_dir + 'y_test.npy', y_test.y, allow_pickle=True)
 
-# t6 = perf_counter()
-# print('postprocessing time = ' + str(t6-t5))
+t6 = perf_counter()
+print('postprocessing time = ' + str(t6-t5))
 
 
 '''
@@ -207,4 +207,4 @@ Plot Results
 # results = Results('t2m', 0, X_test, y_test, y_pred)
 # results.plot_20(output_dir)
 
-# print('total time = ' + str(t6-t0))
+print('total time = ' + str(t6-t0))
