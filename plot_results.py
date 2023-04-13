@@ -54,9 +54,17 @@ baseline.delete_missing_days(y_test)
 results = Results('t2m', 0, X_test, y_test, y_pred, baseline)
 # results.plot_firsts(working_dir, base=True)
 
-mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = results.mse_global()
-mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global = results.mse_terre()
-mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global = results.mse_mer()
+mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = results.score(mse)
+mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global = results.score_terre(mse)
+mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global = results.score_mer(mse)
+
+
+# mse_baseline_matrix, mse_pred_matrix, mse_baseline_global, mse_pred_global = results.mse_global()
+# mse_baseline_terre_matrix, mse_pred_terre_matrix, mse_baseline_terre_global, mse_pred_terre_global = results.mse_terre()
+# mse_baseline_mer_matrix, mse_pred_mer_matrix, mse_baseline_mer_global, mse_pred_mer_global = results.mse_mer()
+
+print(np.array(mse_baseline_global) - np.array(mse_baseline_mer_global))
+
 
 print('rmse:')
 print('  global:')
@@ -70,63 +78,55 @@ print('    baseline : ' + str(np.sqrt(np.mean(mse_baseline_mer_global))))
 print('    prediction : ' + str(np.sqrt(np.mean(mse_pred_mer_global))))
 
 
-results.plot_distrib_rmse(working_dir)
+# results.plot_distrib_rmse(working_dir)
+results.plot_distrib(mse, 'mse', working_dir)
+results.plot_distrib(mae, 'mae', working_dir)
 
-# fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 15))
-# images = []
-# data = [mse_baseline_matrix[0,0,:,:], mse_baseline_terre_matrix[0,0,:,:], mse_baseline_mer_matrix[0,0,:,:]]
-# for i in range(len(data)):
-#     images.append(axs[i].imshow(data[i], cmap='Blues'))
-#     axs[i].label_outer()
-# vmin = min(image.get_array().min() for image in images)
-# vmax = max(image.get_array().max() for image in images)
-# norm = colors.Normalize(vmin=vmin, vmax=vmax)
-# for im in images:
-#     im.set_norm(norm)
-# axs[0].set_title('baseline global')
-# axs[1].set_title('baseline terre')
-# axs[2].set_title('baseline mer')
-# fig.colorbar(images[0], ax=axs)
-# plt.savefig(working_dir + 'mse_baseline.png')
+# fig, axs = plt.subplots()
+# data = [mse_baseline_matrix[0,1,:,:], mse_pred_matrix[0,1,:,:]]
+# im = axs.imshow(data[0], cmap='Blues')
+# axs.set_title('baseline global')
+# fig.colorbar(im, ax=axs)
+# plt.savefig(working_dir + 'mse.png')
 
-
-# fig, axs = plt.subplots(nrows=1,ncols=3, figsize = (21, 7))
-# images = []
-# data = [mse_pred_matrix[0,0,:,:], mse_pred_terre_matrix[0,0,:,:], mse_pred_mer_matrix[0,0,:,:]]
-# for i in range(len(data)):
-#     images.append(axs[i].imshow(data[i], cmap='Blues'))
-#     axs[i].label_outer()
-# vmin = min(image.get_array().min() for image in images)
-# vmax = max(image.get_array().max() for image in images)
-# norm = colors.Normalize(vmin=vmin, vmax=vmax)
-# for im in images:
-#     im.set_norm(norm)
-# axs[0].set_title('pred global')
-# axs[1].set_title('pred terre')
-# axs[2].set_title('pred mer')
-# fig.colorbar(images[0], ax=axs)
-# plt.savefig(working_dir + 'mse_pred.png')
-
-
-fig, axs = plt.subplots(nrows=2,ncols=3, figsize = (21, 15))
+fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (21, 15))
 images = []
-data = np.array([[mse_baseline_matrix[0,0,:,:], mse_baseline_terre_matrix[0,0,:,:], mse_baseline_mer_matrix[0,0,:,:]],
-        [mse_pred_matrix[0,0,:,:], mse_pred_terre_matrix[0,0,:,:], mse_pred_mer_matrix[0,0,:,:]]])
-for i in range(data.shape[0]):
-    for j in range(data.shape[1]):
-        images.append(axs[i, j].imshow(data[i, j], cmap='Blues'))
-        axs[i, j].label_outer()
+data = [mse_baseline_matrix[0,1,:,:], mse_pred_matrix[0,1,:,:]]
+im = axs[0].imshow(data[0], cmap='Blues')
+images.append(im)
+axs[0].label_outer()
+im = axs[1].imshow(data[1], cmap='Blues')
+images.append(im)
+axs[1].label_outer()
 vmin = min(image.get_array().min() for image in images)
 vmax = max(image.get_array().max() for image in images)
 norm = colors.Normalize(vmin=vmin, vmax=vmax)
 for im in images:
     im.set_norm(norm)
-axs[0,0].set_title('baseline global')
-axs[0,1].set_title('baseline terre')
-axs[0,2].set_title('baseline mer')
-axs[1,0].set_title('pred global')
-axs[1,1].set_title('pred terre')
-axs[1,2].set_title('pred mer')
+axs[0].set_title('baseline global')
+axs[1].set_title('pred global')
 fig.colorbar(images[0], ax=axs)
 plt.savefig(working_dir + 'mse.png')
+
+# fig, axs = plt.subplots(nrows=2,ncols=3, figsize = (21, 15))
+# images = []
+# data = np.array([[mse_baseline_matrix[0,1,:,:], mse_baseline_terre_matrix[0,1,:,:], mse_baseline_mer_matrix[0,1,:,:]],
+#         [mse_pred_matrix[0,1,:,:], mse_pred_terre_matrix[0,1,:,:], mse_pred_mer_matrix[0,1,:,:]]])
+# for i in range(data.shape[0]):
+#     for j in range(data.shape[1]):
+#         images.append(axs[i, j].imshow(data[i, j], cmap='Blues'))
+#         axs[i, j].label_outer()
+# vmin = min(image.get_array().min() for image in images)
+# vmax = max(image.get_array().max() for image in images)
+# norm = colors.Normalize(vmin=vmin, vmax=vmax)
+# for im in images:
+#     im.set_norm(norm)
+# axs[0,0].set_title('baseline global')
+# axs[0,1].set_title('baseline terre')
+# axs[0,2].set_title('baseline mer')
+# axs[1,0].set_title('pred global')
+# axs[1,1].set_title('pred terre')
+# axs[1,2].set_title('pred mer')
+# fig.colorbar(images[0], ax=axs)
+# plt.savefig(working_dir + 'mse.png')
 
