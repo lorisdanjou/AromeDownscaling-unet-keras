@@ -32,25 +32,39 @@ Define expes
 '''
 root_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_100/'
 expes = pd.DataFrame(
-    {'name' : ['t2m','SURFGEOPOTENTIEL', 'uv10', 'toa', 'cape'],
+    {'name' : ['t2m','SURFGEOPOTENTIEL', 'uv10', 'toa', 'cape', 'SFX.BATHY', 'tke', 'ts', 'SURFIND.TERREMER'],
     'dir' : [
     root_dir + 't2m/',
     root_dir + 'SURFGEOPOTENTIEL/',
     root_dir + 'uv10/',
     root_dir + 'toa/',
-    root_dir + 'cape/'        
+    root_dir + 'cape/',
+    root_dir + 'SFX.BATHY/',
+    root_dir + 'tke/',
+    root_dir + 'ts/',
+    root_dir + 'SURFIND.TERRE_MER/'        
     ]}
 )
+
+# expes = pd.DataFrame(
+#     {'name' : ['mse', 'mae', 'huber'],
+#     'dir' : [
+#     root_dir + 't2m/',
+#     root_dir + 'mae/',
+#     root_dir + 'huber/',    
+#     ]}
+# )
 
 
 '''
 Graphs
 '''
 print('maps : ')
-# synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param, full=True)
+synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param, full=True)
 print('score maps : ')
 synthesis_score_maps(expes, output_dir, mse, 'mse', dates_test, echeances, resample, data_test_location, baseline_location, param)
 synthesis_score_maps(expes, output_dir, mae, 'mae', dates_test, echeances, resample, data_test_location, baseline_location, param)
+synthesis_score_maps(expes, output_dir, biais, 'biais', dates_test, echeances, resample, data_test_location, baseline_location, param)
 print('distributions : ')
-# synthesis_score_distribs(expes, output_dir, mse, 'mse', dates_test, echeances, resample, data_test_location, baseline_location, param)
-# synthesis_score_distribs(expes, output_dir, mae, 'mae', dates_test, echeances, resample, data_test_location, baseline_location, param)
+synthesis_score_distribs(expes, output_dir, mse, 'mse', dates_test, echeances, resample, data_test_location, baseline_location, param)
+synthesis_score_distribs(expes, output_dir, mae, 'mae', dates_test, echeances, resample, data_test_location, baseline_location, param)

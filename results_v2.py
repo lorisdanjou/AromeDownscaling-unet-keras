@@ -16,6 +16,9 @@ def mse(a, b):
 def mae(a, b):
     return (np.abs(a - b))
 
+def biais(a, b):
+    return a - b
+
 
 '''
 Load Data

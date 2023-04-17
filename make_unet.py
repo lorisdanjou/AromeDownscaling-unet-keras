@@ -17,6 +17,7 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, UpSampling2D, Con
 from keras.optimizer_v2.adam import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from keras.models import Sequential
+from keras.losses import Huber, CosineSimilarity
 
 from math import log2,pow
 import os

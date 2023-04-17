@@ -31,7 +31,7 @@ def synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test
             for im in images:
                 im.set_norm(norm)
             fig.colorbar(images[0], ax=axs)
-            plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png')
+            plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png', bbox_inches='tight')
         else:
             fig, axs = plt.subplots(nrows=1, ncols=len(expes), figsize=(5*len(expes), 4))
             images = []
@@ -50,7 +50,7 @@ def synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test
             for im in images:
                 im.set_norm(norm)
             fig.colorbar(images[0], ax=axs)
-            plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png')
+            plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png', bbox_inches='tight')
 
 
 def synthesis_score_maps(expes, output_dir, metric, metric_name, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
@@ -77,7 +77,7 @@ def synthesis_score_maps(expes, output_dir, metric, metric_name, dates_test, ech
         for im in images:
             im.set_norm(norm)
         fig.colorbar(images[0], ax=axs)
-        plt.savefig(output_dir + metric_name + '_' + str(k) + '_map.png')
+        plt.savefig(output_dir + metric_name + '_' + str(k) + '_map.png', bbox_inches='tight')
 
 
 def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test, echeances, resample, data_test_location, baseline_location, param):
@@ -136,4 +136,4 @@ def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test,
     axs[1].set_title(metric_name + ' terre distribution')
     axs[2].set_title(metric_name + ' mer distribution')
     # axs.tick_params(axis='x', rotation=90)
-    plt.savefig(output_dir + 'synthesis_distributions_' +  metric_name + '.png')
+    plt.savefig(output_dir + 'synthesis_distributions_' +  metric_name + '.png', bbox_inches='tight')
