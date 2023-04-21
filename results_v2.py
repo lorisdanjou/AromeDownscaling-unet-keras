@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import scipy.stats as sc
+from metrics4arome.spectrum_analysis import *
+from metrics4arome.length_scales import *
 
 def get_ind_terre_mer_500m():
     filepath = '/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy'
@@ -19,12 +22,11 @@ def mae(a, b):
 def biais(a, b):
     return a - b
 
-
 '''
 Load Data
 '''
-def load_data(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
-    data_pred = np.load(working_dir + 'y_pred.npy')
+def load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
+    data_pred = pd.read_pickle(working_dir + 'data_pred.csv')
     results_df = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -42,7 +44,7 @@ def load_data(working_dir, dates_test, echeances, resample, data_test_location, 
                 filepath_X_test = data_test_location + 'oper_r_' + d.isoformat() + 'Z_' + param + '.npy'
             X_test = np.load(filepath_X_test)
         except FileNotFoundError:
-            print('missing day : ' + d.isoformat())
+            print('missing day (X): ' + d.isoformat())
             X_test = None
 
         # Load baseline : 
@@ -52,15 +54,15 @@ def load_data(working_dir, dates_test, echeances, resample, data_test_location, 
             filepath_baseline = baseline_location + 'GG9B_' + d.isoformat() + 'Z_' + param + '.npy'
             baseline = np.load(filepath_baseline)
         except FileNotFoundError:
-            print('missing day : ' + d.isoformat())
+            print('missing day (b): ' + d.isoformat())
             baseline = None
 
         # Load y_test : 
         try:
-            filepath_X_test = data_test_location + 'G9L1_' + d.isoformat() + 'Z_' + param + '.npy'
-            y_test = np.load(filepath_X_test)
+            filepath_y_test = data_test_location + 'G9L1_' + d.isoformat() + 'Z_' + param + '.npy'
+            y_test = np.load(filepath_y_test)
         except FileNotFoundError:
-            print('missing day : ' + d.isoformat())
+            print('missing day (y): ' + d.isoformat())
             y_test = None
 
         for i_ech, ech in enumerate(echeances):
@@ -70,7 +72,7 @@ def load_data(working_dir, dates_test, echeances, resample, data_test_location, 
                     'echeances' : [echeances[i_ech]],
                     'X_test' : [X_test[:, :, i_ech]],
                     'baseline' : [baseline[:, :, i_ech]],
-                    'y_pred' : [data_pred[i_d, i_ech, :, :]],
+                    'y_pred' : data_pred[data_pred.dates == d.isoformat()][data_pred.echeances == ech].y.to_list(),
                     'y_test' : [y_test[:, :, i_ech]]}
                 )
             except TypeError:
@@ -89,7 +91,7 @@ def load_data(working_dir, dates_test, echeances, resample, data_test_location, 
 '''
 Get scores global/terre/mer
 '''
-def get_scores(results_df, metric, metric_name):
+def datewise_scores(results_df, metric, metric_name):
     metric_df = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -111,8 +113,8 @@ def get_scores(results_df, metric, metric_name):
     return metric_df.reset_index(drop=True)
 
 
-def get_scores_terre(results_df, metric, metric_name):
-    metric_df = get_scores(results_df, metric, metric_name)
+def datewise_scores_terre(results_df, metric, metric_name):
+    metric_df = datewise_scores(results_df, metric, metric_name)
     ind_terre_mer = get_ind_terre_mer_500m()
     metric_terre_df = pd.DataFrame(
         {'dates' : [],
@@ -135,8 +137,8 @@ def get_scores_terre(results_df, metric, metric_name):
     return metric_terre_df.reset_index(drop=True)
 
 
-def get_scores_mer(results_df, metric, metric_name):
-    metric_df = get_scores(results_df, metric, metric_name)
+def datewise_scores_mer(results_df, metric, metric_name):
+    metric_df = datewise_scores(results_df, metric, metric_name)
     ind_terre_mer = get_ind_terre_mer_500m()
     metric_mer_df = pd.DataFrame(
         {'dates' : [],
@@ -157,6 +159,136 @@ def get_scores_mer(results_df, metric, metric_name):
         )
         metric_mer_df = pd.concat([metric_mer_df, metric_i])
     return metric_mer_df.reset_index(drop=True)
+
+
+def datewise_wasserstein_distance(results_df):
+    wasserstein_df = pd.DataFrame(
+        {'dates' : [],
+        'echeances' : [],
+        'datewise_wasserstein_distance_baseline' : [],
+        'datewise_wasserstein_distance_pred' : []}
+    )
+    for i in range(len(results_df)):
+        dist_pred = np.reshape(results_df.y_pred[i], -1)
+        dist_baseline = np.reshape(results_df.baseline[i], -1)
+        dist_test = np.reshape(results_df.y_test[i], -1)
+        
+        wasserstein_i = pd.DataFrame(
+            {'dates' : [results_df.dates[i]],
+            'echeances' : [results_df.echeances[i]],
+            'datewise_wasserstein_distance_baseline' : [sc.wasserstein_distance(dist_baseline, dist_test)],
+            'datewise_wasserstein_distance_pred' : [sc.wasserstein_distance(dist_pred, dist_test)]}
+        )
+        wasserstein_df = pd.concat([wasserstein_df, wasserstein_i])
+    return wasserstein_df.reset_index(drop=True)
+
+
+def datewise_wasserstein_distance_terre(results_df):
+    ind_terre_mer = np.reshape(get_ind_terre_mer_500m(), -1)
+    wasserstein_df = pd.DataFrame(
+        {'dates' : [],
+        'echeances' : [],
+        'datewise_wasserstein_distance_baseline' : [],
+        'datewise_wasserstein_distance_pred' : []}
+    )
+    for i in range(len(results_df)):
+        dist_pred_global = np.reshape(results_df.y_pred[i], -1)
+        dist_baseline_global = np.reshape(results_df.baseline[i], -1)
+        dist_test_global = np.reshape(results_df.y_test[i], -1)
+
+        dist_pred = []
+        dist_baseline = []
+        dist_test = []
+
+        for k in range(len(ind_terre_mer)):
+            if ind_terre_mer[k] == 1:
+                dist_pred.append(dist_pred_global[k])
+                dist_test.append(dist_test_global[k])
+                dist_baseline.append(dist_baseline_global[k])      
+        wasserstein_i = pd.DataFrame(
+            {'dates' : [results_df.dates[i]],
+            'echeances' : [results_df.echeances[i]],
+            'datewise_wasserstein_distance_baseline' : [sc.wasserstein_distance(dist_baseline, dist_test)],
+            'datewise_wasserstein_distance_pred' : [sc.wasserstein_distance(dist_pred, dist_test)]}
+        )
+        wasserstein_df = pd.concat([wasserstein_df, wasserstein_i])
+    return wasserstein_df.reset_index(drop=True)
+
+
+def datewise_wasserstein_distance_mer(results_df):
+    ind_terre_mer = np.reshape(get_ind_terre_mer_500m(), -1)
+    wasserstein_df = pd.DataFrame(
+        {'dates' : [],
+        'echeances' : [],
+        'datewise_wasserstein_distance_baseline' : [],
+        'datewise_wasserstein_distance_pred' : []}
+    )
+    for i in range(len(results_df)):
+        dist_pred_global = np.reshape(results_df.y_pred[i], -1)
+        dist_baseline_global = np.reshape(results_df.baseline[i], -1)
+        dist_test_global = np.reshape(results_df.y_test[i], -1)
+
+        dist_pred = []
+        dist_baseline = []
+        dist_test = []
+
+        for k in range(len(ind_terre_mer)):
+            if ind_terre_mer[k] == 0:
+                dist_pred.append(dist_pred_global[k])
+                dist_test.append(dist_test_global[k])
+                dist_baseline.append(dist_baseline_global[k])      
+        wasserstein_i = pd.DataFrame(
+            {'dates' : [results_df.dates[i]],
+            'echeances' : [results_df.echeances[i]],
+            'datewise_wasserstein_distance_baseline' : [sc.wasserstein_distance(dist_baseline, dist_test)],
+            'datewise_wasserstein_distance_pred' : [sc.wasserstein_distance(dist_pred, dist_test)]}
+        )
+        wasserstein_df = pd.concat([wasserstein_df, wasserstein_i])
+    return wasserstein_df.reset_index(drop=True)
+
+
+def PSD(results_df):
+    y_pred = np.zeros((len(results_df), 1, results_df.y_pred[0].shape[0], results_df.y_pred[0].shape[1]))
+    y_test = np.zeros((len(results_df), 1, results_df.y_test[0].shape[0], results_df.y_test[0].shape[1]))
+    baseline = np.zeros((len(results_df), 1, results_df.baseline[0].shape[0], results_df.baseline[0].shape[1]))
+    for k in range(len(results_df)):
+        y_test[k, 0, :, :] = results_df.y_test[k]
+        y_pred[k, 0, :, :] = results_df.y_pred[k]
+        baseline[k, 0, :, :] = results_df.baseline[k]
+        
+    psd_pred =  PowerSpectralDensity(y_pred)
+    psd_test =  PowerSpectralDensity(y_test)
+    psd_baseline =  PowerSpectralDensity(baseline)
+    psd_df = pd.DataFrame(
+        {'psd_test': psd_test[0, :],
+        'psd_pred' : psd_pred[0, :],
+        'psd_baseline' : psd_baseline[0, :]}
+    )
+    return psd_df
+
+
+def corr_len(results_df):
+    y_pred = np.zeros((len(results_df), 1, results_df.y_pred[0].shape[0], results_df.y_pred[0].shape[1]))
+    y_test = np.zeros((len(results_df), 1, results_df.y_test[0].shape[0], results_df.y_test[0].shape[1]))
+    baseline = np.zeros((len(results_df), 1, results_df.baseline[0].shape[0], results_df.baseline[0].shape[1]))
+
+    for k in range(len(results_df)):
+        y_test[k, 0, :, :] = results_df.y_test[k]
+        y_pred[k, 0, :, :] = results_df.y_pred[k]
+        baseline[k, 0, :, :] = results_df.baseline[k]
+
+    corr_len_pred = length_scale(y_pred, sca=2.5)
+    corr_len_test = length_scale(y_test, sca=2.5)
+    corr_len_baseline = length_scale(baseline, sca=2.5)
+
+    print(corr_len_pred.shape)
+
+    corr_len_df = pd.DataFrame(
+        {'corr_len_test': [corr_len_test[0, :, :]],
+        'corr_len_pred' : [corr_len_pred[0, :, :]],
+        'corr_len_baseline' : [corr_len_baseline[0, :, :]]}
+    )
+    return corr_len_df
 
 
 '''
@@ -185,7 +317,7 @@ def plot_results(results_df, param,  output_dir):
 
 def plot_score_maps(results_df, metric, metric_name, output_dir):
     for i in range(10):
-        metric_df = get_scores(results_df, metric, metric_name)
+        metric_df = datewise_scores(results_df, metric, metric_name)
         fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (25, 12))
         images = []
         data = [metric_df[metric_name + '_baseline_map'][i], metric_df[metric_name + '_y_pred_map'][i]]
@@ -205,42 +337,121 @@ def plot_score_maps(results_df, metric, metric_name, output_dir):
 
 
 def plot_distrib(results_df, metric, metric_name, output_dir):
-        score_baseline = get_scores(results_df, metric, metric_name)[metric_name + '_baseline_mean']
-        score_baseline_terre = get_scores_terre(results_df, metric, metric_name)[metric_name + '_baseline_mean']
-        score_baseline_mer = get_scores_mer(results_df, metric, metric_name)[metric_name + '_baseline_mean']
-        score_pred = get_scores(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
-        score_pred_terre = get_scores_terre(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
-        score_pred_mer = get_scores_mer(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
+    score_baseline = datewise_scores(results_df, metric, metric_name)[metric_name + '_baseline_mean']
+    score_baseline_terre = datewise_scores_terre(results_df, metric, metric_name)[metric_name + '_baseline_mean']
+    score_baseline_mer = datewise_scores_mer(results_df, metric, metric_name)[metric_name + '_baseline_mean']
+    score_pred = datewise_scores(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
+    score_pred_terre = datewise_scores_terre(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
+    score_pred_mer = datewise_scores_mer(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
+    
+    D_baseline = np.zeros((len(score_baseline), 3))
+    for i in range(len(score_baseline)):
+        D_baseline[i, 0] = score_baseline[i]
+        D_baseline[i, 1] = score_baseline_terre[i]
+        D_baseline[i, 2] = score_baseline_mer[i]
+
+    D_pred = np.zeros((len(score_pred), 3))
+    for i in range(len(score_pred)):
+        D_pred[i, 0] = score_pred[i]
+        D_pred[i, 1] = score_pred_terre[i]
+        D_pred[i, 2] = score_pred_mer[i]
+
+    D = np.concatenate([D_baseline, D_pred], axis=1)
+    # labels = ['global', 'terre', 'mer']
+    labels = ['global_baseline', 'terre_baseline', 'mer_baseline', 'global_pred', 'terre_pred', 'mer_pred']
+
+    
+    fig, ax = plt.subplots(figsize=(10, 11))
+    plt.grid()
+    VP = ax.boxplot(D, positions=[3, 6, 9, 12, 15, 18], widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    ax.set_title(metric_name + ' distribution')
+    ax.tick_params(axis='x', rotation=45)
+
+    plt.savefig(output_dir + 'distribution_' +  metric_name + '.png')
+
+
+def plot_datewise_wasserstein_distance_distrib(results_df, output_dir):    
+    wd_df = datewise_wasserstein_distance(results_df)
+    wd_df_baseline = wd_df['datewise_wasserstein_distance_baseline']
+    wd_df_pred = wd_df['datewise_wasserstein_distance_pred']
+    wd_df_terre = datewise_wasserstein_distance_terre(results_df)
+    wd_df_baseline_terre = wd_df_terre['datewise_wasserstein_distance_baseline']
+    wd_df_pred_terre = wd_df_terre['datewise_wasserstein_distance_pred']
+    wd_df_mer = datewise_wasserstein_distance_mer(results_df)
+    wd_df_baseline_mer = wd_df_mer['datewise_wasserstein_distance_baseline']
+    wd_df_pred_mer = wd_df_mer['datewise_wasserstein_distance_pred']
+
+    D_baseline = np.zeros((len(wd_df), 3))
+    for i in range(len(wd_df_baseline)):
+        D_baseline[i, 0] = wd_df_baseline[i]
+        D_baseline[i, 1] = wd_df_baseline_terre[i]
+        D_baseline[i, 2] = wd_df_baseline_mer[i]
+
+    D_pred = np.zeros((len(wd_df), 3))
+    for i in range(len(wd_df_pred)):
+        D_pred[i, 0] = wd_df_pred[i]
+        D_pred[i, 1] = wd_df_pred_terre[i]
+        D_pred[i, 2] = wd_df_pred_mer[i]
         
-        D_baseline = np.zeros((len(score_baseline), 3))
-        for i in range(len(score_baseline)):
-            D_baseline[i, 0] = score_baseline[i]
-            D_baseline[i, 1] = score_baseline_terre[i]
-            D_baseline[i, 2] = score_baseline_mer[i]
+    D = np.concatenate([D_baseline, D_pred], axis=1)
+    labels = ['global_baseline', 'terre_baseline', 'mer_baseline', 'global_pred', 'terre_pred', 'mer_pred']
 
-        D_pred = np.zeros((len(score_pred), 3))
-        for i in range(len(score_pred)):
-            D_pred[i, 0] = score_pred[i]
-            D_pred[i, 1] = score_pred_terre[i]
-            D_pred[i, 2] = score_pred_mer[i]
+    fig, ax = plt.subplots(figsize=(10, 11))
+    plt.grid()
+    VP = ax.boxplot(D, positions=[3, 6, 9, 12, 15, 18], widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    ax.set_title('datewise wasserstein distance distribution')
+    ax.tick_params(axis='x', rotation=45)
 
-        D = np.concatenate([D_baseline, D_pred], axis=1)
-        # labels = ['global', 'terre', 'mer']
-        labels = ['global_baseline', 'terre_baseline', 'mer_baseline', 'global_pred', 'terre_pred', 'mer_pred']
+    plt.savefig(output_dir + 'distribution_wd.png')
 
-        
-        fig, ax = plt.subplots(figsize=(10, 11))
-        plt.grid()
-        VP = ax.boxplot(D, positions=[3, 6, 9, 12, 15, 18], widths=1.5, patch_artist=True,
-                        showmeans=True, meanline=True, showfliers=False,
-                        medianprops={"color": "white", "linewidth": 0.5},
-                        boxprops={"facecolor": "C0", "edgecolor": "white",
-                                "linewidth": 0.5},
-                        whiskerprops={"color": "C0", "linewidth": 1.5},
-                        capprops={"color": "C0", "linewidth": 1.5},
-                        meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
-                        labels=labels)
-        ax.set_title(metric_name + ' distribution')
-        ax.tick_params(axis='x', rotation=45)
 
-        plt.savefig(output_dir + 'distribution_' +  metric_name + '.png')
+def plot_PSDs(results_df, output_dir):
+    psd_df = PSD(results_df)
+
+    fig, ax = plt.subplots()
+    ax.grid()
+    ax.plot(psd.psd_test, color='r', label='psd_test')
+    ax.plot(psd.psd_pred, color='b', label='psd_pred')
+    ax.plot(psd.psd_baseline, color='g', label='psd_baseline')
+    ax.loglog()
+    ax.legend()
+    ax.set_title('PSDs')
+
+    fig.savefig(output_dir + '_PSDs.png')
+
+
+def plot_cor_len(results_df, output_dir):
+    corr_len_df = corr_len(results_df)
+
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize = (28, 7))
+    data = [corr_len_df.corr_len_baseline[0], corr_len_df.corr_len_pred[0], corr_len_df.corr_len_test[0]]
+    images = []
+    for i in range(3):
+        images.append(axs[i].imshow(data[i]))
+        axs[i].label_outer()
+    vmin = min(image.get_array().min() for image in images)
+    vmax = max(image.get_array().max() for image in images)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    for im in images:
+        im.set_norm(norm)
+    axs[0].set_title('baseline')
+    axs[1].set_title('y_pred')
+    axs[2].set_title('y_test')
+    fig.colorbar(images[0], ax=axs)
+    plt.savefig(output_dir + 'correlation_length_maps.png', bbox_inches='tight')
