@@ -4,9 +4,9 @@ import pandas as pd
 from bronx.stdtypes.date import daterangex as rangex
 
 
-'''
+"""
 Useful functions to get the shape of a domain
-'''
+"""
 def highestPowerof2(n):
     res = 0
     for i in range(n, 0, -1):
@@ -54,10 +54,16 @@ def get_highestPowerof2_2km5(resample='c'):
         return size_2km5, size_2km5_crop
 
 
-'''
+"""
 Load dataset
-'''
-def load_data(dates, echeances, data_location, data_static_location, params, static_fields=[], resample='r'):
+"""
+def load_data(dates, echeances, params_in, params_out, data_location, data_static_location='', static_fields=[], resample='r'):
+    """
+    Creates a pandas dataframe containing the fields : dates, echeances, X and y
+    Inputs :
+    Output : A pandas dataframe with length = number of samples (dates * echeances)
+                containing dates, echeances, X (size B x H x W x params_in) and y (size B x H x W x params_out))
+    """
     data = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -65,17 +71,18 @@ def load_data(dates, echeances, data_location, data_static_location, params, sta
         'y' : []}
     )
 
-    domain_shape = get_shape_2km5(resample=resample)
+    domain_shape_in  = get_shape_2km5(resample=resample)
+    domain_shape_out = get_shape_500m()
     for i_d, d in enumerate(dates):
         # load X
-        X_i = np.zeros([len(echeances), domain_shape[0], domain_shape[1], len(params) + len(static_fields)])
+        X_i = np.zeros([len(echeances), domain_shape_in[0], domain_shape_in[1], len(params_in) + len(static_fields)], dtype=np.float32)
         try:
-            for i_p, p in enumerate(params):
+            for i_p, p in enumerate(params_in):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                 else:
-                    filepath_X = filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
+                    filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
         # load X static
             for i_s, s in enumerate(static_fields):
@@ -85,19 +92,21 @@ def load_data(dates, echeances, data_location, data_static_location, params, sta
                 else:
                     filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
                 for i_ech, ech in enumerate(echeances):
-                    X_i[i_ech, :, :, i_p + i_s] = np.load(filepath_static)
+                    X_i[i_ech, :, :, len(params_in) + i_s] = np.load(filepath_static)
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
             X_i = None
 
         # load y
+        y_i = np.zeros([len(echeances), domain_shape_out[0], domain_shape_out[1], len(params_out)], dtype=np.float32)
         try:
-            filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_t2m.npy'
-            if exists(filepath_y):
-                y_i = np.load(filepath_y).transpose([2, 0, 1])
-            else:
-                filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_t2m.npy'
-                y_i = np.load(filepath_y).transpose([2, 0, 1])
+            for i_p, p in enumerate(params_out):
+                filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_' + p + '.npy'
+                if exists(filepath_y):
+                    y_i[:, :, :, i_p] = np.load(filepath_y).transpose([2, 0, 1])
+                else:
+                    filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_' + p + '.npy'
+                    y_i[:, :, :, i_p] = np.load(filepath_y).transpose([2, 0, 1])
         except FileNotFoundError:
             print('missing day (y): ' + d.isoformat())
             y_i = None
@@ -108,7 +117,7 @@ def load_data(dates, echeances, data_location, data_static_location, params, sta
                     {'dates' : [d.isoformat()],
                     'echeances' : [ech],
                     'X' : [X_i[i_ech, :, :, :]],
-                    'y' : [y_i[i_ech, :, :]]}
+                    'y' : [y_i[i_ech, :, :, :]]}
                 )
             except TypeError:
                 data_i = pd.DataFrame(
@@ -122,200 +131,313 @@ def load_data(dates, echeances, data_location, data_static_location, params, sta
 
 
 def to_array(arrays_serie):
-    if len(arrays_serie[0].shape) == 3: # C'est un X
-        output = np.zeros([len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1], arrays_serie[0].shape[2]])
-        for i in range(len(arrays_serie)):
-            output[i, :, :, :] = arrays_serie[i]
-    else: # C'est un y
-        output = np.zeros([len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1]])
-        for i in range(len(arrays_serie)):
-            output[i, :, :] = arrays_serie[i]
+    """
+    Transforms a pandas dataframe previously loaded in a big numpy array
+    Input : a pandas dataframe
+    output : array of size B x H x W x C
+    """
+    output = np.zeros([len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1], arrays_serie[0].shape[2]], dtype = np.float32)
+    for i in range(len(arrays_serie)):
+        output[i, :, :, :] = arrays_serie[i]
     return output
 
 
-
-
-# def to_array(array_serie, dates, echeances):
-#     array_serie_na = array_serie.dropna()
-#     if len(array_serie_na[0].shape) == 3:
-#         output = np.zeros([len(dates)*len(echeances), array_serie_na[0].shape[0], array_serie_na[0].shape[1],  array_serie_na[0].shape[2]])
-#         for i in range(len(array_serie_na)):
-#             output[array_serie_na.index[i],: , :, :] = array_serie.iloc[i]
-#     else:
-#         output = np.zeros([len(dates)*len(echeances), array_serie_na[0].shape[0], array_serie_na[0].shape[1]])
-#         for i in range(len(array_serie_na)):
-#             output[array_serie_na.index[i], : , :] = array_serie.iloc[i]
-#     return output
-
-
-'''
-Pre/postprocessing functions
-'''
+"""
+Preprocessing functions
+"""
 def pad(data):
+    """
+    Pad the data in order to make its size compatible with the unet
+    Input : dataframe
+    Output : dataframe with padding
+    """
     data_pad = data.copy()
     for i in range(len(data)):
         data_pad.X[i] = np.pad(data.X[i], ((5,5), (2,3), (0,0)), mode='reflect')
-        data_pad.y[i] = np.pad(data.y[i], ((5,5), (2,3)), mode='reflect')
+        data_pad.y[i] = np.pad(data.y[i], ((5,5), (2,3), (0,0)), mode='reflect')
     return data_pad
 
 
-# def pad(data_na):
-#     data = data_na.dropna()
-#     data_pad = data.copy()
-#     for i in range(len(data)):
-#         data_pad.X.iloc[i] = np.pad(data.X[i], ((5,5), (2,3), (0,0)), mode='reflect')
-#         data_pad.y.iloc[i] = np.pad(data.y[i], ((5,5), (2,3)), mode='reflect')
-#     return data_pad
-
 def crop(data):
+    """
+    Reverse operation of paddind
+    Input : dataframe
+    output : dataframe
+    """
     data_crop = data.copy()
     for i in range(len(data)):
         data_crop.X[i] = data.X[i][5:-5, 2:-3, :]
-        data_crop.y[i] = data.y[i][5:-5, 2:-3]
+        data_crop.y[i] = data.y[i][5:-5, 2:-3, :]
     return data_crop
 
 
-def standardisation(data):
-    data_standard = data.copy()
-    mean_X = []
-    for i in range(len(data_standard)):
-        mean_X.append([np.mean(data_standard.X[i][:, :, j]) for j in range(data_standard.X[0].shape[2])])
-    mean_X = pd.Series(mean_X, name='mean_X')        
-    mean_y = pd.Series([np.mean(data_standard.y[i]) for i in range(len(data_standard))], name='mean_y')
+"""
+Global Normalisations
+"""
+def get_max_abs(data, working_dir):
+    data_norm = data.copy() # ? Copie en mémoire non nécessaire (idem pour les fonctions get ... suivantes)
+    X = to_array(data.X)
+    y = to_array(data.y)
+    max_abs_X = np.abs(X, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
+    max_abs_y = np.abs(y, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
+    np.save(working_dir + 'max_abs_X.npy', max_abs_X)
+    np.save(working_dir + 'max_abs_y.npy', max_abs_y)
 
-    std_X = []
-    for i in range(len(data_standard)):
-        std_X.append([np.std(data_standard.X[i][:, :, i_p]) for i_p in range(data_standard.X[0].shape[2])])
-    std_X = pd.Series(std_X, name='std_X')        
-    std_y = pd.Series([np.std(data_standard.y[i]) for i in range(len(data_standard))], name='std_y')
-
-    data_standard = pd.concat([data_standard, mean_X, mean_y, std_X, std_y], axis=1)
-
-    for i in range(len(data_standard)):
-        data_standard.y[i] = (data_standard.y[i] - data_standard.mean_y[i])/data_standard.std_y[i]
-        X_i = data_standard.X[i].copy()
-        for i_p in range(data_standard.X[0].shape[2]):
-            X_i[:, :, i_p] = (data_standard.X[i][:, :, i_p] - data_standard.mean_X[i][i_p])/data_standard.std_X[i][i_p]
-        data_standard.X[i] = X_i
-    return data_standard
+    # # find the max in each channel of each array :
+    # max_abs_X = data_norm.X.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
+    # max_abs_y = data_norm.y.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
+    # np.save(working_dir + 'max_abs_X.npy', max_abs_X)
+    # np.save(working_dir + 'max_abs_y.npy', max_abs_y)
 
 
-def destandardisation(data_standard):
-    data_des = data_standard.copy()
-    for i in range(len(data_des)):
-        data_des.y[i] = data_des.std_y[i] * data_des.y[i] + data_des.mean_y[i]
-        X_i = data_des.X[i].copy()
-        for i_p in range(data_des.X[0].shape[2]):
-            X_i[:, :, i_p] = data_des.std_X[i][i_p] * X_i[:, :, i_p] + data_des.mean_X[i][i_p]
-        data_des.X[i] = X_i
-    return data_des.drop(columns=['mean_X', 'mean_y', 'std_X', 'std_y'])
+def get_mean(data, working_dir):
+    data_norm = data.copy() 
+    mean_X = data_norm.X.apply(lambda x: x.mean(axis=(0, 1))).mean()
+    mean_y = data_norm.y.apply(lambda x: x.mean(axis=(0, 1))).mean()
+    np.save(working_dir + 'mean_X.npy', mean_X)
+    np.save(working_dir + 'mean_y.npy', mean_y)
 
 
-def normalisation(data):
+def get_mean(data, working_dir):
     data_norm = data.copy()
-    max_X = []
-    for i in range(len(data_norm)):
-        max_X.append([np.abs(data_norm.X[i][:, :, j]).max() for j in range(data_norm.X[0].shape[2])])
-    max_X = pd.Series(max_X, name='max_abs_X')        
-    max_y = pd.Series([np.abs(data_norm.y[i]).max() for i in range(len(data_norm))], name='max_abs_y')
+    std_X = data_norm.X.apply(lambda x: x.std(axis=(0, 1))).mean()
+    std_y = data_norm.y.apply(lambda x: x.std(axis=(0, 1))).mean()
+    np.save(working_dir + 'std_X.npy', std_X)
+    np.save(working_dir + 'std_y.npy', std_y)
 
-    data_norm = pd.concat([data_norm, max_X, max_y], axis=1)
 
+def get_min(data, working_dir):
+    data_norm = data.copy()
+    min_X = data_norm.X.apply(lambda x: x.min(axis=(0, 1))).mean()
+    min_y = data_norm.y.apply(lambda x: x.min(axis=(0, 1))).mean()
+    np.save(working_dir + 'min_X.npy', min_X)
+    np.save(working_dir + 'min_y.npy', min_y)
+
+
+def get_max(data, working_dir):
+    data_norm = data.copy()
+    max_X = data_norm.X.apply(lambda x: x.max(axis=(0, 1))).mean()
+    max_y = data_norm.y.apply(lambda x: x.max(axis=(0, 1))).mean()
+    np.save(working_dir + 'max_X.npy', max_X)
+    np.save(working_dir + 'max_y.npy', max_y)
+
+
+def global_normalisation(data, working_dir):
+    data_norm = data.copy()
+    max_abs_X = np.load(working_dir + 'max_abs_X.npy')
+    max_abs_y = np.load(working_dir + 'max_abs_y.npy')
+
+    # normalize the imputs :
     for i in range(len(data_norm)):
-        data_norm.y[i] = data_norm.y[i] / data_norm.max_abs_y[i]
-        X_i = data_norm.X[i].copy()
-        for i_p in range(data_norm.X[0].shape[2]):
-            X_i[:, :, i_p] = X_i[:, :, i_p] / data_norm.max_abs_X[i][i_p]
-        data_norm.X[i] = X_i
+        for i_cx in range(data_norm.X[0].shape[2]):
+            data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] / max_abs_X[i_cx]
+        for i_cy in range(data_norm.y[0].shape[2]):
+            data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] / max_abs_y[i_cy]
     return data_norm
 
 
-def denormalisation(data_norm):
-    data_den = data_norm.copy()
+def global_denormalisation(data, working_dir):
+    data_den = data.copy()
+    max_abs_X = np.load(working_dir + 'max_abs_X.npy')
+    max_abs_y = np.load(working_dir + 'max_abs_y.npy')
     for i in range(len(data_den)):
-        data_den.y[i] = data_den.y[i] * data_den.max_abs_y[i]
-        X_i = data_den.X[i].copy()
-        for i_p in range(data_den.X[0].shape[2]):
-            X_i[:, :, i_p] = X_i[:, :, i_p] * data_den.max_abs_X[i][i_p]
-        data_den.X[i] = X_i
-    return data_den.drop(columns=['max_abs_X', 'max_abs_y'])
+        for i_cx in range(data_den.X[0].shape[2]):
+            data_den.X[i][:, :, i_cx] = data_den.X[i][:, :, i_cx] * max_abs_X[i_cx]
+        for i_cy in range(data_den.y[0].shape[2]):
+            data_den.y[i][:, :, i_cy] = data_den.y[i][:, :, i_cy] * max_abs_y[i_cy]
+    return data_den
 
 
-def min_max_norm(data):
+def global_standardisation(data, working_dir):
     data_norm = data.copy()
-
-    min_X = []
-    for i in range(len(data_norm)):
-        min_X.append([data_norm.X[i][:, :, j].min() for j in range(data_norm.X[0].shape[2])])
-    min_X = pd.Series(min_X, name='min_X')        
-    min_y = pd.Series([data_norm.y[i].min() for i in range(len(data_norm))], name='min_y')
-
-    max_X = []
-    for i in range(len(data_norm)):
-        max_X.append([data_norm.X[i][:, :, j].max() for j in range(data_norm.X[0].shape[2])])
-    max_X = pd.Series(max_X, name='max_X')        
-    max_y = pd.Series([data_norm.y[i].max() for i in range(len(data_norm))], name='max_y')
-
-    data_norm = pd.concat([data_norm, min_X, min_y, max_X, max_y], axis=1)
+    mean_X = np.load(working_dir + 'mean_X.npy')
+    mean_y = np.load(working_dir + 'mean_y.npy')
+    std_X  = np.load(working_dir + 'std_X.npy')
+    std_y  = np.load(working_dir + 'std_y.npy')
 
     for i in range(len(data_norm)):
-        data_norm.y[i] = (data_norm.y[i] - data_norm.min_y[i]) / (data_norm.max_y[i] - data_norm.min_y[i])
-        X_i = data_norm.X[i].copy()
-        for i_p in range(data_norm.X[0].shape[2]):
-            X_i[:, :, i_p] = (X_i[:, :, i_p] - data_norm.min_X[i][i_p]) / (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p])
-        data_norm.X[i] = X_i
+        for i_cx in range(data_norm.X[0].shape[2]):
+            data_norm.X[i][:, :, i_cx] = (data_norm.X[i][:, :, i_cx] - mean_X) / std_X[i_cx]
+        for i_cy in range(data_norm.y[0].shape[2]):
+            data_norm.y[i][:, :, i_cy] = (data_norm.y[i][:, :, i_cy] - mean_X) / std_y[i_cy]
     return data_norm
 
 
-def min_max_denorm(data_norm):
-    data_den = data_norm.copy()
-    for i in range(len(data_den)):
-        data_den.y[i] = data_den.y[i] * (data_norm.max_y[i] - data_norm.min_y[i]) + data_norm.min_y[i]
-        X_i = data_den.X[i].copy()
-        for i_p in range(data_den.X[0].shape[2]):
-            X_i[:, :, i_p] = X_i[:, :, i_p] * (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p]) + data_norm.min_X[i][i_p]
-        data_den.X[i] = X_i
-    return data_den.drop(columns=['min_X', 'min_y', 'max_X', 'max_y'])
-
-
-def mean_norm(data):
+def global_destandardisation(data, working_dir):
     data_norm = data.copy()
-
-    mean_X = []
-    for i in range(len(data_norm)):
-        mean_X.append([np.mean(data_norm.X[i][:, :, j]) for j in range(data_norm.X[0].shape[2])])
-    mean_X = pd.Series(mean_X, name='mean_X')        
-    mean_y = pd.Series([np.mean(data_norm.y[i]) for i in range(len(data_norm))], name='mean_y')
-
-    min_X = []
-    for i in range(len(data_norm)):
-        min_X.append([data_norm.X[i][:, :, j].min() for j in range(data_norm.X[0].shape[2])])
-    min_X = pd.Series(min_X, name='min_X')        
-    min_y = pd.Series([data_norm.y[i].min() for i in range(len(data_norm))], name='min_y')
-
-    max_X = []
-    for i in range(len(data_norm)):
-        max_X.append([data_norm.X[i][:, :, j].max() for j in range(data_norm.X[0].shape[2])])
-    max_X = pd.Series(max_X, name='max_X')        
-    max_y = pd.Series([data_norm.y[i].max() for i in range(len(data_norm))], name='max_y')
-
-    data_norm = pd.concat([data_norm, mean_X, mean_y, min_X, min_y, max_X, max_y], axis=1)
+    mean_X = np.load(working_dir + 'mean_X.npy')
+    mean_y = np.load(working_dir + 'mean_y.npy')
+    std_X  = np.load(working_dir + 'std_X.npy')
+    std_y  = np.load(working_dir + 'std_y.npy')
 
     for i in range(len(data_norm)):
-        data_norm.y[i] = (data_norm.y[i] - data_norm.mean_y[i]) / (data_norm.max_y[i] - data_norm.min_y[i])
-        X_i = data_norm.X[i].copy()
-        for i_p in range(data_norm.X[0].shape[2]):
-            X_i[:, :, i_p] = (X_i[:, :, i_p] - data_norm.mean_X[i][i_p]) / (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p])
-        data_norm.X[i] = X_i
+        for i_cx in range(data_norm.X[0].shape[2]):
+            data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] * std_X[i_cx] + mean_X
+        for i_cy in range(data_norm.y[0].shape[2]):
+            data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] * std_y[i_cy] + mean_X
     return data_norm
 
 
-def mean_denorm(data_norm):
-    data_den = data_norm.copy()
-    for i in range(len(data_den)):
-        data_den.y[i] = data_den.y[i] * (data_norm.max_y[i] - data_norm.min_y[i]) + data_norm.mean_y[i]
-        X_i = data_den.X[i].copy()
-        for i_p in range(data_den.X[0].shape[2]):
-            X_i[:, :, i_p] = X_i[:, :, i_p] * (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p]) + data_norm.mean_X[i][i_p]
-        data_den.X[i] = X_i
-    return data_den.drop(columns=['mean_X', 'mean_y', 'min_X', 'min_y', 'max_X', 'max_y'])
+
+
+###############################################################################################################################
+# OLD
+###############################################################################################################################
+
+# ! Attention
+# ! Les fonctions si-dessous ne sont pas à jour !
+# TODO passer de (B x H x W x C) à (B x C x H x W) si besoin
+
+
+# def standardisation(data):
+#     data_standard = data.copy()
+#     mean_X = []
+#     mean_y = []
+#     for i in range(len(data_standard)):
+#         mean_X.append([np.mean(data_standard.X[i][i_p, :, :]) for i_p in range(data_standard.X[0].shape[0])])
+#         mean_y.append([np.mean(data_standard.y[i][i_p, :, :]) for i_p in range(data_standard.y[0].shape[0])])
+#     mean_X = pd.Series(mean_X, name='mean_X')        
+#     mean_y = pd.Series(mean_y, name='mean_y')
+
+#     std_X = []
+#     std_y = []
+#     for i in range(len(data_standard)):
+#         std_X.append([np.std(data_standard.X[i][i_p, :, :]) for i_p in range(data_standard.X[0].shape[2])])
+#         std_X.append([np.std(data_standard.X[i][i_p, :, :]) for i_p in range(data_standard.X[0].shape[2])])
+#     std_X = pd.Series(std_X, name='std_X')        
+#     std_y = pd.Series(std_y, name='std_y')
+
+#     data_standard = pd.concat([data_standard, mean_X, mean_y, std_X, std_y], axis=1)
+
+#     for i in range(len(data_standard)):
+#         X_i = data_standard.X[i].copy()
+#         y_i = data_standard.y[i].copy()
+#         for i_p in range(data_standard.X[0].shape[2]):
+#             X_i[i_p, :, :] = (data_standard.X[i][i_p, :, :] - data_standard.mean_X[i][i_p])/data_standard.std_X[i][i_p]
+#             y_i[i_p, :, :] = (data_standard.y[i][i_p, :, :] - data_standard.mean_y[i][i_p])/data_standard.std_y[i][i_p]
+#         data_standard.X[i] = X_i
+#         data_standard.y[i] = y_i
+#     return data_standard
+
+
+# def destandardisation(data_standard):
+#     data_des = data_standard.copy()
+#     for i in range(len(data_des)):
+#         X_i = data_des.X[i].copy()
+#         y_i = data_des.y[i].copy()
+#         for i_p in range(data_des.X[0].shape[0]):
+#             X_i[i_p, :, :] = data_des.std_X[i][i_p] * X_i[i_p, :, :] + data_des.mean_X[i][i_p]
+#             y_i[i_p, :, :] = data_des.std_y[i][i_p] * y_i[i_p, :, :] + data_des.mean_y[i][i_p]
+#         data_des.X[i] = X_i
+#         data_des.y[i] = y_i
+#     return data_des.drop(columns=['mean_X', 'mean_y', 'std_X', 'std_y'])
+
+
+# def normalisation(data):
+#     data_norm = data.copy()
+#     max_X = []
+#     for i in range(len(data_norm)):
+#         max_X.append([np.abs(data_norm.X[i][:, :, j]).max() for j in range(data_norm.X[0].shape[2])])
+#     max_X = pd.Series(max_X, name='max_abs_X')        
+#     max_y = pd.Series([np.abs(data_norm.y[i]).max() for i in range(len(data_norm))], name='max_abs_y')
+
+#     data_norm = pd.concat([data_norm, max_X, max_y], axis=1)
+
+#     for i in range(len(data_norm)):
+#         data_norm.y[i] = data_norm.y[i] / data_norm.max_abs_y[i]
+#         X_i = data_norm.X[i].copy()
+#         for i_p in range(data_norm.X[0].shape[2]):
+#             X_i[:, :, i_p] = X_i[:, :, i_p] / data_norm.max_abs_X[i][i_p]
+#         data_norm.X[i] = X_i
+#     return data_norm
+
+
+# def denormalisation(data_norm):
+#     data_den = data_norm.copy()
+#     for i in range(len(data_den)):
+#         data_den.y[i] = data_den.y[i] * data_den.max_abs_y[i]
+#         X_i = data_den.X[i].copy()
+#         for i_p in range(data_den.X[0].shape[2]):
+#             X_i[:, :, i_p] = X_i[:, :, i_p] * data_den.max_abs_X[i][i_p]
+#         data_den.X[i] = X_i
+#     return data_den.drop(columns=['max_abs_X', 'max_abs_y'])
+
+
+# def min_max_norm(data):
+#     data_norm = data.copy()
+
+#     min_X = []
+#     for i in range(len(data_norm)):
+#         min_X.append([data_norm.X[i][:, :, j].min() for j in range(data_norm.X[0].shape[2])])
+#     min_X = pd.Series(min_X, name='min_X')        
+#     min_y = pd.Series([data_norm.y[i].min() for i in range(len(data_norm))], name='min_y')
+
+#     max_X = []
+#     for i in range(len(data_norm)):
+#         max_X.append([data_norm.X[i][:, :, j].max() for j in range(data_norm.X[0].shape[2])])
+#     max_X = pd.Series(max_X, name='max_X')        
+#     max_y = pd.Series([data_norm.y[i].max() for i in range(len(data_norm))], name='max_y')
+
+#     data_norm = pd.concat([data_norm, min_X, min_y, max_X, max_y], axis=1)
+
+#     for i in range(len(data_norm)):
+#         data_norm.y[i] = (data_norm.y[i] - data_norm.min_y[i]) / (data_norm.max_y[i] - data_norm.min_y[i])
+#         X_i = data_norm.X[i].copy()
+#         for i_p in range(data_norm.X[0].shape[2]):
+#             X_i[:, :, i_p] = (X_i[:, :, i_p] - data_norm.min_X[i][i_p]) / (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p])
+#         data_norm.X[i] = X_i
+#     return data_norm
+
+
+# def min_max_denorm(data_norm):
+#     data_den = data_norm.copy()
+#     for i in range(len(data_den)):
+#         data_den.y[i] = data_den.y[i] * (data_norm.max_y[i] - data_norm.min_y[i]) + data_norm.min_y[i]
+#         X_i = data_den.X[i].copy()
+#         for i_p in range(data_den.X[0].shape[2]):
+#             X_i[:, :, i_p] = X_i[:, :, i_p] * (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p]) + data_norm.min_X[i][i_p]
+#         data_den.X[i] = X_i
+#     return data_den.drop(columns=['min_X', 'min_y', 'max_X', 'max_y'])
+
+
+# def mean_norm(data):
+#     data_norm = data.copy()
+
+#     mean_X = []
+#     for i in range(len(data_norm)):
+#         mean_X.append([np.mean(data_norm.X[i][:, :, j]) for j in range(data_norm.X[0].shape[2])])
+#     mean_X = pd.Series(mean_X, name='mean_X')        
+#     mean_y = pd.Series([np.mean(data_norm.y[i]) for i in range(len(data_norm))], name='mean_y')
+
+#     min_X = []
+#     for i in range(len(data_norm)):
+#         min_X.append([data_norm.X[i][:, :, j].min() for j in range(data_norm.X[0].shape[2])])
+#     min_X = pd.Series(min_X, name='min_X')        
+#     min_y = pd.Series([data_norm.y[i].min() for i in range(len(data_norm))], name='min_y')
+
+#     max_X = []
+#     for i in range(len(data_norm)):
+#         max_X.append([data_norm.X[i][:, :, j].max() for j in range(data_norm.X[0].shape[2])])
+#     max_X = pd.Series(max_X, name='max_X')        
+#     max_y = pd.Series([data_norm.y[i].max() for i in range(len(data_norm))], name='max_y')
+
+#     data_norm = pd.concat([data_norm, mean_X, mean_y, min_X, min_y, max_X, max_y], axis=1)
+
+#     for i in range(len(data_norm)):
+#         data_norm.y[i] = (data_norm.y[i] - data_norm.mean_y[i]) / (data_norm.max_y[i] - data_norm.min_y[i])
+#         X_i = data_norm.X[i].copy()
+#         for i_p in range(data_norm.X[0].shape[2]):
+#             X_i[:, :, i_p] = (X_i[:, :, i_p] - data_norm.mean_X[i][i_p]) / (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p])
+#         data_norm.X[i] = X_i
+#     return data_norm
+
+
+# def mean_denorm(data_norm):
+#     data_den = data_norm.copy()
+#     for i in range(len(data_den)):
+#         data_den.y[i] = data_den.y[i] * (data_norm.max_y[i] - data_norm.min_y[i]) + data_norm.mean_y[i]
+#         X_i = data_den.X[i].copy()
+#         for i_p in range(data_den.X[0].shape[2]):
+#             X_i[:, :, i_p] = X_i[:, :, i_p] * (data_norm.max_X[i][i_p] - data_norm.min_X[i][i_p]) + data_norm.mean_X[i][i_p]
+#         data_den.X[i] = X_i
+#     return data_den.drop(columns=['mean_X', 'mean_y', 'min_X', 'min_y', 'max_X', 'max_y'])

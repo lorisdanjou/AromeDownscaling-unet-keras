@@ -23,15 +23,16 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params = ['t2m']
+params_in = ['t2m']
+params_out = ['t2m'] # ! ne fonctionne pas pour 2 sorties (utile pour le vent)
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-# output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/unet_4/0.005_32_64/cape/'
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/params/t2m/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/normalisations/normalisation/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/normalisations/normalisation/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -42,30 +43,36 @@ Load data
 '''
 data_train = load_data(
     dates_train, 
-    echeances, 
+    echeances,
+    params_in,
+    params_out,
     data_train_location,
-    data_static_location,
-    params,
+    data_static_location=data_static_location,
     static_fields=static_fields,
-    resample=resample)
+    resample=resample
+)
 
 data_valid = load_data(
     dates_valid, 
-    echeances, 
+    echeances,
+    params_in,
+    params_out,
     data_valid_location,
-    data_static_location,
-    params,
+    data_static_location=data_static_location,
     static_fields=static_fields,
-    resample=resample)
+    resample=resample
+)
 
 data_test = load_data(
     dates_test, 
-    echeances, 
+    echeances,
+    params_in,
+    params_out,
     data_test_location,
-    data_static_location,
-    params,
+    data_static_location=data_static_location,
     static_fields=static_fields,
-    resample=resample)
+    resample=resample
+)
 
 t2 = perf_counter()
 print('loading time = ' + str(t2-t1))
@@ -78,10 +85,11 @@ data_train = pad(data_train)
 data_valid = pad(data_valid)
 data_test = pad(data_test)
 
-data_train = standardisation(data_train)
-data_valid = standardisation(data_valid)
-data_test  = standardisation(data_test)
+get_max_abs(data_train, working_dir)
 
+data_train = normalisation(data_train, working_dir)
+data_valid = normalisation(data_valid, working_dir)
+data_test  = normalisation(data_test, working_dir)
 
 X_train = to_array(data_train.X)
 y_train = to_array(data_train.y)
@@ -163,9 +171,9 @@ Postprocessing
 '''
 data_pred = data_test.copy()
 for i in range(len(data_pred)):
-    data_pred.y[i] = y_pred[i, :, :]
+    data_pred.y[i] = y_pred[i, :, :, :]
 data_pred.to_pickle(output_dir + 'data_pred_model.csv')
-data_pred = destandardisation(data_pred)
+data_pred = denormalisation(data_pred, working_dir)
 data_pred = crop(data_pred)
 
 data_pred.to_pickle(output_dir + 'data_pred.csv')
@@ -174,7 +182,7 @@ data_pred.to_pickle(output_dir + 'data_pred.csv')
 # y_pred = y_pred.reshape([data_pred.dates.nunique(), data_pred.echeances.nunique(), y_pred.shape[1], y_pred.shape[2]])
 # np.save(output_dir + 'y_pred.npy', y_pred, allow_pickle=True)
 
-data_test = destandardisation(data_test)
-data_test = crop(data_test) 
+# data_test = destandardisation(data_test)
+# data_test = crop(data_test) 
 
 

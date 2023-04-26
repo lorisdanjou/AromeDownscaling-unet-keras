@@ -214,9 +214,10 @@ def synthesis_PSDs(expes, output_dir, dates_test, echeances, resample, data_test
         psd = PSD(results_df)
 
         axs[i].grid()
-        axs[i].plot(psd.psd_test, color='r', label='psd_test')
+        axs[i].plot(psd.psd_test, color='r', label='psd_y_test')
         axs[i].plot(psd.psd_pred, color='b', label='psd_pred')
         axs[i].plot(psd.psd_baseline, color='g', label='psd_baseline')
+        axs[i].plot(psd.psd_X_test, color='m', label='psd_X_test')
         axs[i].loglog()
         
         axs[i].set_title('PSDs ' + expes.name[i])
@@ -225,7 +226,7 @@ def synthesis_PSDs(expes, output_dir, dates_test, echeances, resample, data_test
 
 
 def synthesis_corr_len(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
-    fig, axs = plt.subplots(nrows=1, ncols=len(expes)+1, figsize=(7*len(expes), 5))
+    fig, axs = plt.subplots(nrows=1, ncols=len(expes)+2, figsize=(7*len(expes), 5))
     images = []
     for j in range(len(expes)):
         working_dir = expes.dir[j]
@@ -233,14 +234,18 @@ def synthesis_corr_len(expes, output_dir, dates_test, echeances, resample, data_
         results_df  = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
         corr_len_df = corr_len(results_df)
         
-        im = axs[j].imshow(corr_len_df.corr_len_pred[0], cmap='coolwarm')
+        im = axs[j].imshow(corr_len_df.corr_len_pred[0], cmap='plasma')
         images.append(im)
         axs[j].label_outer()
-        axs[j].set_title('correlation length y_pred ' + name)
-    im = axs[j+1].imshow(corr_len_df.corr_len_baseline[0], cmap='coolwarm')
+        axs[j].set_title('correlation length y_pred' + name)
+    im = axs[j+1].imshow(corr_len_df.corr_len_baseline[0], cmap='plasma')
     images.append(im)
     axs[j+1].label_outer()
-    axs[j+1].set_title('correlation length baseline ')
+    axs[j+1].set_title('correlation length baseline')
+    im = axs[j+2].imshow(corr_len_df.corr_len_test[0], cmap='plasma')
+    images.append(im)
+    axs[j+1].label_outer()
+    axs[j+2].set_title('correlation length test')
 
     vmin = min(image.get_array().min() for image in images)
     vmax = max(image.get_array().max() for image in images)

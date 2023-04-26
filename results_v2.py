@@ -251,18 +251,22 @@ def PSD(results_df):
     y_pred = np.zeros((len(results_df), 1, results_df.y_pred[0].shape[0], results_df.y_pred[0].shape[1]))
     y_test = np.zeros((len(results_df), 1, results_df.y_test[0].shape[0], results_df.y_test[0].shape[1]))
     baseline = np.zeros((len(results_df), 1, results_df.baseline[0].shape[0], results_df.baseline[0].shape[1]))
+    X_test = np.zeros((len(results_df), 1, results_df.X_test[0].shape[0], results_df.X_test[0].shape[1]))
     for k in range(len(results_df)):
         y_test[k, 0, :, :] = results_df.y_test[k]
         y_pred[k, 0, :, :] = results_df.y_pred[k]
         baseline[k, 0, :, :] = results_df.baseline[k]
+        X_test[k, 0, :, :] = results_df.X_test[k]
         
     psd_pred =  PowerSpectralDensity(y_pred)
     psd_test =  PowerSpectralDensity(y_test)
     psd_baseline =  PowerSpectralDensity(baseline)
+    psd_X_test =  PowerSpectralDensity(X_test)
     psd_df = pd.DataFrame(
         {'psd_test': psd_test[0, :],
         'psd_pred' : psd_pred[0, :],
-        'psd_baseline' : psd_baseline[0, :]}
+        'psd_baseline' : psd_baseline[0, :],
+        'psd_X_test' : psd_X_test[0, :]}
     )
     return psd_df
 
@@ -281,13 +285,34 @@ def corr_len(results_df):
     corr_len_test = length_scale(y_test, sca=2.5)
     corr_len_baseline = length_scale(baseline, sca=2.5)
 
-    print(corr_len_pred.shape)
-
     corr_len_df = pd.DataFrame(
         {'corr_len_test': [corr_len_test[0, :, :]],
         'corr_len_pred' : [corr_len_pred[0, :, :]],
         'corr_len_baseline' : [corr_len_baseline[0, :, :]]}
     )
+
+    # corr_len_pred = np.zeros((len(results_df), results_df.y_pred[0].shape[0]-1, results_df.y_pred[0].shape[1]-1))
+    # corr_len_test = np.zeros((len(results_df), results_df.y_test[0].shape[0]-1, results_df.y_test[0].shape[1]-1))
+    # corr_len_baseline = np.zeros((len(results_df), results_df.baseline[0].shape[0]-1, results_df.baseline[0].shape[1]-1))
+
+    # for k in range(len(results_df)):
+    #     y_pred = np.zeros((1, 1, results_df.y_pred[k].shape[0], results_df.y_pred[k].shape[1]))
+    #     y_test = np.zeros((1, 1, results_df.y_test[k].shape[0], results_df.y_test[k].shape[1]))
+    #     baseline = np.zeros((1, 1, results_df.baseline[k].shape[0], results_df.baseline[k].shape[1]))
+
+    #     y_test[0, 0, :, :] = results_df.y_test[k]
+    #     y_pred[0, 0, :, :] = results_df.y_pred[k]
+    #     baseline[0, 0, :, :] = results_df.baseline[k]
+
+    #     corr_len_test[k, :, :] = length_scale(y_test, sca=2.5)
+    #     corr_len_pred[k, :, :] = length_scale(y_pred, sca=2.5)
+    #     corr_len_baseline[k, :, :] = length_scale(baseline, sca=2.5)
+
+    # corr_len_df = pd.DataFrame(
+    #     {'corr_len_test': [corr_len_test[:, :, :].mean(axis=0)],
+    #     'corr_len_pred' : [corr_len_pred[:, :, :].mean(axis=0)],
+    #     'corr_len_baseline' : [corr_len_baseline[:, :, :].mean(axis=0)]}
+    # )
     return corr_len_df
 
 
