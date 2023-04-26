@@ -57,34 +57,30 @@ def get_highestPowerof2_2km5(resample='c'):
 """
 Load dataset
 """
-def load_data(dates, echeances, params_in, params_out, data_location, data_static_location='', static_fields=[], resample='r'):
+def load_X(dates, echeances, params, data_location, data_static_location='', static_fields=[], resample='r'):
     """
-    Creates a pandas dataframe containing the fields : dates, echeances, X and y
-    Inputs :
-    Output : A pandas dataframe with length = number of samples (dates * echeances)
-                containing dates, echeances, X (size B x H x W x params_in) and y (size B x H x W x params_out))
+    Loads all the inputs of the NN in a pandas dataframe
+    Inputs:
+    Outputs : pansdas dataframe
     """
     data = pd.DataFrame(
-        {'dates' : [],
-        'echeances' : [],
-        'X' : [],
-        'y' : []}
+        [], 
+        columns = ['dates', 'echeances'] + params
     )
-
     domain_shape_in  = get_shape_2km5(resample=resample)
     domain_shape_out = get_shape_500m()
     for i_d, d in enumerate(dates):
-        # load X
-        X_i = np.zeros([len(echeances), domain_shape_in[0], domain_shape_in[1], len(params_in) + len(static_fields)], dtype=np.float32)
+        # chargement des données
+        X_d = np.zeros([len(echeances), domain_shape_in[0], domain_shape_in[1], len(params) + len(static_fields)], dtype=np.float32)
         try:
-            for i_p, p in enumerate(params_in):
+            for i_p, p in enumerate(params):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                 else:
                     filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
-        # load X static
+                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+        # champs statiques
             for i_s, s in enumerate(static_fields):
                 if resample == 'r':
                     filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
@@ -92,15 +88,48 @@ def load_data(dates, echeances, params_in, params_out, data_location, data_stati
                 else:
                     filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
                 for i_ech, ech in enumerate(echeances):
-                    X_i[i_ech, :, :, len(params_in) + i_s] = np.load(filepath_static)
+                    X_d[i_ech, :, :, len(params) + i_s] = np.load(filepath_static)
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
             X_i = None
+        
+        for i_ech, ech in enumerate(echeances):
+            values_i = []
+            try:
+                for i_p, p in enumerate(params + static_fields):
+                    values_i.append(X_d[i_ech, :, :, i_p])
+                data_i = pd.DataFrame(
+                    [[d.isoformat(), ech] + values_i], 
+                    columns = ['dates', 'echeances'] + params + static_fields
+                )
+            except TypeError:
+                for i_p, p in enumerate(params):
+                    values_i.append(None)
+                data_i = pd.DataFrame(
+                    [[d.isoformat(), ech] + values_i], 
+                    columns = ['dates', 'echeances'] + params + static_fields
+                )
 
-        # load y
-        y_i = np.zeros([len(echeances), domain_shape_out[0], domain_shape_out[1], len(params_out)], dtype=np.float32)
+            data = pd.concat([data, data_i])
+    return data.reset_index(drop=True)
+
+
+def load_y(dates, echeances, params, data_location):
+    """
+    Loads all the outputs of the NN in a pandas dataframe
+    Inputs:
+    Outputs : pansdas dataframe
+    """
+    data = pd.DataFrame(
+        [], 
+        columns = ['dates', 'echeances'] + params
+    )
+    domain_shape_out = get_shape_500m()
+    for i_d, d in enumerate(dates):
+        # chargement des données
+        y_i = np.zeros([len(echeances), domain_shape_out[0], domain_shape_out[1], len(params)], dtype=np.float32)
         try:
-            for i_p, p in enumerate(params_out):
+            for i_p, p in enumerate(params):
                 filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_' + p + '.npy'
                 if exists(filepath_y):
                     y_i[:, :, :, i_p] = np.load(filepath_y).transpose([2, 0, 1])
@@ -110,172 +139,161 @@ def load_data(dates, echeances, params_in, params_out, data_location, data_stati
         except FileNotFoundError:
             print('missing day (y): ' + d.isoformat())
             y_i = None
-
+        
+        # création du dataframe
         for i_ech, ech in enumerate(echeances):
+            values_i = []
             try:
+                for i_p, p in enumerate(params):
+                    values_i.append(y_i[i_ech, :, :, i_p])
                 data_i = pd.DataFrame(
-                    {'dates' : [d.isoformat()],
-                    'echeances' : [ech],
-                    'X' : [X_i[i_ech, :, :, :]],
-                    'y' : [y_i[i_ech, :, :, :]]}
+                    [[d.isoformat(), ech] + values_i], 
+                    columns = ['dates', 'echeances'] + params
                 )
             except TypeError:
+                for i_p, p in enumerate(params):
+                    values_i.append(None)
                 data_i = pd.DataFrame(
-                    {'dates' : [],
-                    'echeances' : [],
-                    'X' : [],
-                    'y' : []}
+                    [[d.isoformat(), ech] + values_i], 
+                    columns = ['dates', 'echeances'] + params
                 )
+
             data = pd.concat([data, data_i])
     return data.reset_index(drop=True)
 
 
-def to_array(arrays_serie):
+def delete_missing_days(X_df, y_df):
     """
-    Transforms a pandas dataframe previously loaded in a big numpy array
-    Input : a pandas dataframe
-    output : array of size B x H x W x C
+    Deletes all the missing days in both X and y
+    Inputs :
+        X_df : a pandas dataframe representing X 
+        y_df : a pandas dataframe representing y 
+    Outputs:
+        X_df : a pandas dataframe representing X without missing days
+        y_df : a pandas dataframe representing y without missing days
     """
-    output = np.zeros([len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1], arrays_serie[0].shape[2]], dtype = np.float32)
-    for i in range(len(arrays_serie)):
-        output[i, :, :, :] = arrays_serie[i]
-    return output
+    X_df_out = X_df.copy()
+    y_df_out = y_df.copy()
+    nan_indices_y = y_df[y_df.isna().any(axis=1)].index
+    y_df_out = y_df_out.drop(index=nan_indices_y, axis = 0)
+    X_df_out = X_df_out.drop(index=nan_indices_y, axis = 0)
+    nan_indices_X = X_df[X_df.isna().any(axis=1)].index
+    X_df_out = X_df_out.drop(index=nan_indices_X, axis = 0)
+    y_df_out = y_df_out.drop(index=nan_indices_X, axis = 0)
+
+    return X_df_out.reset_index(drop=True), y_df_out.reset_index(drop=True)
 
 
-"""
-Preprocessing functions
-"""
-def pad(data):
+def get_arrays_cols(df):
+    arrays_cols = []
+    for c in df.columns:
+        if type(df[c][0]) == np.ndarray:
+            arrays_cols.append(c)
+    return arrays_cols
+
+
+def pad(df):
     """
     Pad the data in order to make its size compatible with the unet
     Input : dataframe
     Output : dataframe with padding
     """
-    data_pad = data.copy()
-    for i in range(len(data)):
-        data_pad.X[i] = np.pad(data.X[i], ((5,5), (2,3), (0,0)), mode='reflect')
-        data_pad.y[i] = np.pad(data.y[i], ((5,5), (2,3), (0,0)), mode='reflect')
-    return data_pad
+    df_out = df.copy()
+    arrays_cols = get_arrays_cols(df_out)
+    for c in arrays_cols:
+        for i in range(len(df_out)):
+            df_out[c][i] = np.pad(df_out[c][i], ((5,5), (2,3)), mode='reflect')
+    return df_out
 
 
-def crop(data):
+def crop(df):
     """
-    Reverse operation of paddind
+    Crop the data
     Input : dataframe
-    output : dataframe
+    Output : cropped dataframe
     """
-    data_crop = data.copy()
-    for i in range(len(data)):
-        data_crop.X[i] = data.X[i][5:-5, 2:-3, :]
-        data_crop.y[i] = data.y[i][5:-5, 2:-3, :]
-    return data_crop
+    df_out = df.copy()
+    for c in df_out.columns:
+        if type(df_out[c][0]) == np.ndarray:
+            for i in range(len(df_out)):
+                df_out[c][i] = df_out[c][i][5:-5, 2:-3]
+    return df_out
 
 
-"""
-Global Normalisations
-"""
-def get_max_abs(data, working_dir):
-    data_norm = data.copy() # ? Copie en mémoire non nécessaire (idem pour les fonctions get ... suivantes)
-    X = to_array(data.X)
-    y = to_array(data.y)
-    max_abs_X = np.abs(X, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
-    max_abs_y = np.abs(y, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
-    np.save(working_dir + 'max_abs_X.npy', max_abs_X)
-    np.save(working_dir + 'max_abs_y.npy', max_abs_y)
-
-    # # find the max in each channel of each array :
-    # max_abs_X = data_norm.X.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
-    # max_abs_y = data_norm.y.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
-    # np.save(working_dir + 'max_abs_X.npy', max_abs_X)
-    # np.save(working_dir + 'max_abs_y.npy', max_abs_y)
+def param_to_array(arrays_serie):
+    """
+    Transforms a pandas series into a big numpy array
+    """
+    array = np.zeros((len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1]), dtype=np.float32)
+    for i in range(len(arrays_serie)):
+        array[i, :, :] = arrays_serie[i]
+    return array
 
 
-def get_mean(data, working_dir):
-    data_norm = data.copy() 
-    mean_X = data_norm.X.apply(lambda x: x.mean(axis=(0, 1))).mean()
-    mean_y = data_norm.y.apply(lambda x: x.mean(axis=(0, 1))).mean()
-    np.save(working_dir + 'mean_X.npy', mean_X)
-    np.save(working_dir + 'mean_y.npy', mean_y)
+def df_to_array(df):
+    """
+    transforms a pandas dataframe into a big numpy array
+    """
+    arrays_cols = get_arrays_cols(df)
+            
+    array = np.zeros((len(df), df[arrays_cols[0]][0].shape[0], df[arrays_cols[0]][0].shape[1], len(arrays_cols)), dtype=np.float32)
+
+    for i in range(len(df)):
+        for i_c, c in enumerate(arrays_cols):
+            array[i, :, :, i_c] = df[c][i]
+    return array
 
 
-def get_mean(data, working_dir):
-    data_norm = data.copy()
-    std_X = data_norm.X.apply(lambda x: x.std(axis=(0, 1))).mean()
-    std_y = data_norm.y.apply(lambda x: x.std(axis=(0, 1))).mean()
-    np.save(working_dir + 'std_X.npy', std_X)
-    np.save(working_dir + 'std_y.npy', std_y)
+###############################################################################################################################
+# Normalisations
+###############################################################################################################################
 
+# Normalisation between -1 and 1
+def get_max_abs_df(X_df, working_dir):
+    """
+    Get the absolute maximun of the columns containing arrays of X
+    ! the channels of X must begin by the channels of y (in the same order)
+    Input : X dataframe
+    Output: List of absolute maximums 
+    """
+    max_abs_out = []
+    arrays_cols = get_arrays_cols(X_df)
+    for i_c, c in enumerate(arrays_cols):
+        X_c = param_to_array(X_df[c])
+        max_abs_out.append(np.abs(X_c).max())
+    np.save(working_dir + 'max_abs_X.npy', max_abs_out, allow_pickle=True)
 
-def get_min(data, working_dir):
-    data_norm = data.copy()
-    min_X = data_norm.X.apply(lambda x: x.min(axis=(0, 1))).mean()
-    min_y = data_norm.y.apply(lambda x: x.min(axis=(0, 1))).mean()
-    np.save(working_dir + 'min_X.npy', min_X)
-    np.save(working_dir + 'min_y.npy', min_y)
-
-
-def get_max(data, working_dir):
-    data_norm = data.copy()
-    max_X = data_norm.X.apply(lambda x: x.max(axis=(0, 1))).mean()
-    max_y = data_norm.y.apply(lambda x: x.max(axis=(0, 1))).mean()
-    np.save(working_dir + 'max_X.npy', max_X)
-    np.save(working_dir + 'max_y.npy', max_y)
-
-
-def global_normalisation(data, working_dir):
-    data_norm = data.copy()
+def normalisation(df, working_dir):
+    """
+    Normalize a dataframe between -1 and 1
+    Input : X or y dataframe
+    Output : normalized copy of the dataframe
+    """
+    df_norm = df.copy()
+    arrays_cols = get_arrays_cols(df_norm)
     max_abs_X = np.load(working_dir + 'max_abs_X.npy')
-    max_abs_y = np.load(working_dir + 'max_abs_y.npy')
+    for i in range(len(df_norm)):
+        for i_c, c in enumerate(arrays_cols):
+            df_norm[c][i] = df_norm[c][i] / max_abs_X[i_c]
+    return df_norm
 
-    # normalize the imputs :
-    for i in range(len(data_norm)):
-        for i_cx in range(data_norm.X[0].shape[2]):
-            data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] / max_abs_X[i_cx]
-        for i_cy in range(data_norm.y[0].shape[2]):
-            data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] / max_abs_y[i_cy]
-    return data_norm
-
-
-def global_denormalisation(data, working_dir):
-    data_den = data.copy()
+def denormalisation(df, working_dir):
+    """
+    Denormalize a dataframe
+    Input : X or y dataframe
+    Output : denormalized copy of the dataframe
+    """
+    df_den = df.copy()
+    arrays_cols = get_arrays_cols(df_den)
     max_abs_X = np.load(working_dir + 'max_abs_X.npy')
-    max_abs_y = np.load(working_dir + 'max_abs_y.npy')
-    for i in range(len(data_den)):
-        for i_cx in range(data_den.X[0].shape[2]):
-            data_den.X[i][:, :, i_cx] = data_den.X[i][:, :, i_cx] * max_abs_X[i_cx]
-        for i_cy in range(data_den.y[0].shape[2]):
-            data_den.y[i][:, :, i_cy] = data_den.y[i][:, :, i_cy] * max_abs_y[i_cy]
-    return data_den
+    for i in range(len(df_den)):
+        for i_c, c in enumerate(arrays_cols):
+            df_den[c][i] = df_den[c][i] * max_abs_X[i_c]
+    return df_den
 
 
-def global_standardisation(data, working_dir):
-    data_norm = data.copy()
-    mean_X = np.load(working_dir + 'mean_X.npy')
-    mean_y = np.load(working_dir + 'mean_y.npy')
-    std_X  = np.load(working_dir + 'std_X.npy')
-    std_y  = np.load(working_dir + 'std_y.npy')
+# Standardisation
 
-    for i in range(len(data_norm)):
-        for i_cx in range(data_norm.X[0].shape[2]):
-            data_norm.X[i][:, :, i_cx] = (data_norm.X[i][:, :, i_cx] - mean_X) / std_X[i_cx]
-        for i_cy in range(data_norm.y[0].shape[2]):
-            data_norm.y[i][:, :, i_cy] = (data_norm.y[i][:, :, i_cy] - mean_X) / std_y[i_cy]
-    return data_norm
-
-
-def global_destandardisation(data, working_dir):
-    data_norm = data.copy()
-    mean_X = np.load(working_dir + 'mean_X.npy')
-    mean_y = np.load(working_dir + 'mean_y.npy')
-    std_X  = np.load(working_dir + 'std_X.npy')
-    std_y  = np.load(working_dir + 'std_y.npy')
-
-    for i in range(len(data_norm)):
-        for i_cx in range(data_norm.X[0].shape[2]):
-            data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] * std_X[i_cx] + mean_X
-        for i_cy in range(data_norm.y[0].shape[2]):
-            data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] * std_y[i_cy] + mean_X
-    return data_norm
 
 
 
@@ -284,9 +302,237 @@ def global_destandardisation(data, working_dir):
 # OLD
 ###############################################################################################################################
 
+# def load_data(dates, echeances, params_in, params_out, data_location, data_static_location='', static_fields=[], resample='r'):
+#     """
+#     Creates a pandas dataframe containing the fields : dates, echeances, X and y
+#     Inputs :
+#     Output : A pandas dataframe with length = number of samples (dates * echeances)
+#                 containing dates, echeances, X (size B x H x W x params_in) and y (size B x H x W x params_out))
+#     """
+#     data = pd.DataFrame(
+#         {'dates' : [],
+#         'echeances' : [],
+#         'X' : [],
+#         'y' : []}
+#     )
+
+#     domain_shape_in  = get_shape_2km5(resample=resample)
+#     domain_shape_out = get_shape_500m()
+#     for i_d, d in enumerate(dates):
+#         # load X
+#         X_i = np.zeros([len(echeances), domain_shape_in[0], domain_shape_in[1], len(params_in) + len(static_fields)], dtype=np.float32)
+#         try:
+#             for i_p, p in enumerate(params_in):
+#                 if resample == 'c':
+#                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
+#                     X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+#                 else:
+#                     filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
+#                     X_i[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+#         # load X static
+#             for i_s, s in enumerate(static_fields):
+#                 if resample == 'r':
+#                     filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
+#                     # filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
+#                 else:
+#                     filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
+#                 for i_ech, ech in enumerate(echeances):
+#                     X_i[i_ech, :, :, len(params_in) + i_s] = np.load(filepath_static)
+#         except FileNotFoundError:
+#             print('missing day (X): ' + d.isoformat())
+#             X_i = None
+
+#         # load y
+#         y_i = np.zeros([len(echeances), domain_shape_out[0], domain_shape_out[1], len(params_out)], dtype=np.float32)
+#         try:
+#             for i_p, p in enumerate(params_out):
+#                 filepath_y = data_location + 'G9L1_' + d.isoformat() + 'Z_' + p + '.npy'
+#                 if exists(filepath_y):
+#                     y_i[:, :, :, i_p] = np.load(filepath_y).transpose([2, 0, 1])
+#                 else:
+#                     filepath_y = data_location + 'G9KP_' + d.isoformat() + 'Z_' + p + '.npy'
+#                     y_i[:, :, :, i_p] = np.load(filepath_y).transpose([2, 0, 1])
+#         except FileNotFoundError:
+#             print('missing day (y): ' + d.isoformat())
+#             y_i = None
+
+#         for i_ech, ech in enumerate(echeances):
+#             try:
+#                 data_i = pd.DataFrame(
+#                     {'dates' : [d.isoformat()],
+#                     'echeances' : [ech],
+#                     'X' : [X_i[i_ech, :, :, :]],
+#                     'y' : [y_i[i_ech, :, :, :]]}
+#                 )
+#             except TypeError:
+#                 data_i = pd.DataFrame(
+#                     {'dates' : [],
+#                     'echeances' : [],
+#                     'X' : [],
+#                     'y' : []}
+#                 )
+#             data = pd.concat([data, data_i])
+#     return data.reset_index(drop=True)
+
+
+# def to_array(arrays_serie):
+#     """
+#     Transforms a pandas dataframe previously loaded in a big numpy array
+#     Input : a pandas dataframe
+#     output : array of size B x H x W x C
+#     """
+#     output = np.zeros([len(arrays_serie), arrays_serie[0].shape[0], arrays_serie[0].shape[1], arrays_serie[0].shape[2]], dtype = np.float32)
+#     for i in range(len(arrays_serie)):
+#         output[i, :, :, :] = arrays_serie[i]
+#     return output
+
+
+# """
+# Preprocessing functions
+# """
+# def pad(data):
+#     """
+#     Pad the data in order to make its size compatible with the unet
+#     Input : dataframe
+#     Output : dataframe with padding
+#     """
+#     data_pad = data.copy()
+#     for i in range(len(data)):
+#         data_pad.X[i] = np.pad(data.X[i], ((5,5), (2,3), (0,0)), mode='reflect')
+#         data_pad.y[i] = np.pad(data.y[i], ((5,5), (2,3), (0,0)), mode='reflect')
+#     return data_pad
+
+
+# def crop(data):
+#     """
+#     Reverse operation of paddind
+#     Input : dataframe
+#     output : dataframe
+#     """
+#     data_crop = data.copy()
+#     for i in range(len(data)):
+#         data_crop.X[i] = data.X[i][5:-5, 2:-3, :]
+#         data_crop.y[i] = data.y[i][5:-5, 2:-3, :]
+#     return data_crop
+
+
+# """
+# Global Normalisations
+# """
+# def get_max_abs(data, working_dir):
+#     data_norm = data.copy() # ? Copie en mémoire non nécessaire (idem pour les fonctions get ... suivantes)
+#     X = to_array(data.X)
+#     y = to_array(data.y)
+#     max_abs_X = np.abs(X, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
+#     max_abs_y = np.abs(y, axis=(0, 1, 2), dtype=np.float64).max(axis=(0, 1, 2), dtype=np.float64)
+#     np.save(working_dir + 'max_abs_X.npy', max_abs_X)
+#     np.save(working_dir + 'max_abs_y.npy', max_abs_y)
+
+#     # # find the max in each channel of each array :
+#     # max_abs_X = data_norm.X.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
+#     # max_abs_y = data_norm.y.apply(lambda x: np.abs(x).max(axis=(0, 1))).mean()
+#     # np.save(working_dir + 'max_abs_X.npy', max_abs_X)
+#     # np.save(working_dir + 'max_abs_y.npy', max_abs_y)
+
+
+# def get_mean(data, working_dir):
+#     data_norm = data.copy() 
+#     mean_X = data_norm.X.apply(lambda x: x.mean(axis=(0, 1))).mean()
+#     mean_y = data_norm.y.apply(lambda x: x.mean(axis=(0, 1))).mean()
+#     np.save(working_dir + 'mean_X.npy', mean_X)
+#     np.save(working_dir + 'mean_y.npy', mean_y)
+
+
+# def get_mean(data, working_dir):
+#     data_norm = data.copy()
+#     std_X = data_norm.X.apply(lambda x: x.std(axis=(0, 1))).mean()
+#     std_y = data_norm.y.apply(lambda x: x.std(axis=(0, 1))).mean()
+#     np.save(working_dir + 'std_X.npy', std_X)
+#     np.save(working_dir + 'std_y.npy', std_y)
+
+
+# def get_min(data, working_dir):
+#     data_norm = data.copy()
+#     min_X = data_norm.X.apply(lambda x: x.min(axis=(0, 1))).mean()
+#     min_y = data_norm.y.apply(lambda x: x.min(axis=(0, 1))).mean()
+#     np.save(working_dir + 'min_X.npy', min_X)
+#     np.save(working_dir + 'min_y.npy', min_y)
+
+
+# def get_max(data, working_dir):
+#     data_norm = data.copy()
+#     max_X = data_norm.X.apply(lambda x: x.max(axis=(0, 1))).mean()
+#     max_y = data_norm.y.apply(lambda x: x.max(axis=(0, 1))).mean()
+#     np.save(working_dir + 'max_X.npy', max_X)
+#     np.save(working_dir + 'max_y.npy', max_y)
+
+
+# def global_normalisation(data, working_dir):
+#     data_norm = data.copy()
+#     max_abs_X = np.load(working_dir + 'max_abs_X.npy')
+#     max_abs_y = np.load(working_dir + 'max_abs_y.npy')
+
+#     # normalize the imputs :
+#     for i in range(len(data_norm)):
+#         for i_cx in range(data_norm.X[0].shape[2]):
+#             data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] / max_abs_X[i_cx]
+#         for i_cy in range(data_norm.y[0].shape[2]):
+#             data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] / max_abs_y[i_cy]
+#     return data_norm
+
+
+# def global_denormalisation(data, working_dir):
+#     data_den = data.copy()
+#     max_abs_X = np.load(working_dir + 'max_abs_X.npy')
+#     max_abs_y = np.load(working_dir + 'max_abs_y.npy')
+#     for i in range(len(data_den)):
+#         for i_cx in range(data_den.X[0].shape[2]):
+#             data_den.X[i][:, :, i_cx] = data_den.X[i][:, :, i_cx] * max_abs_X[i_cx]
+#         for i_cy in range(data_den.y[0].shape[2]):
+#             data_den.y[i][:, :, i_cy] = data_den.y[i][:, :, i_cy] * max_abs_y[i_cy]
+#     return data_den
+
+
+# def global_standardisation(data, working_dir):
+#     data_norm = data.copy()
+#     mean_X = np.load(working_dir + 'mean_X.npy')
+#     mean_y = np.load(working_dir + 'mean_y.npy')
+#     std_X  = np.load(working_dir + 'std_X.npy')
+#     std_y  = np.load(working_dir + 'std_y.npy')
+
+#     for i in range(len(data_norm)):
+#         for i_cx in range(data_norm.X[0].shape[2]):
+#             data_norm.X[i][:, :, i_cx] = (data_norm.X[i][:, :, i_cx] - mean_X) / std_X[i_cx]
+#         for i_cy in range(data_norm.y[0].shape[2]):
+#             data_norm.y[i][:, :, i_cy] = (data_norm.y[i][:, :, i_cy] - mean_X) / std_y[i_cy]
+#     return data_norm
+
+
+# def global_destandardisation(data, working_dir):
+#     data_norm = data.copy()
+#     mean_X = np.load(working_dir + 'mean_X.npy')
+#     mean_y = np.load(working_dir + 'mean_y.npy')
+#     std_X  = np.load(working_dir + 'std_X.npy')
+#     std_y  = np.load(working_dir + 'std_y.npy')
+
+#     for i in range(len(data_norm)):
+#         for i_cx in range(data_norm.X[0].shape[2]):
+#             data_norm.X[i][:, :, i_cx] = data_norm.X[i][:, :, i_cx] * std_X[i_cx] + mean_X
+#         for i_cy in range(data_norm.y[0].shape[2]):
+#             data_norm.y[i][:, :, i_cy] = data_norm.y[i][:, :, i_cy] * std_y[i_cy] + mean_X
+#     return data_norm
+
+
+
+
+###############################################################################################################################
+# OLD : Normalisations par sample
+###############################################################################################################################
+
 # ! Attention
 # ! Les fonctions si-dessous ne sont pas à jour !
-# TODO passer de (B x H x W x C) à (B x C x H x W) si besoin
+# TODO passer de (B x C x H x W) à (B x H x W x C) (premières fonctions seulement)
+# TODO les rendres compatibles avec le nouveu chargement des données
 
 
 # def standardisation(data):

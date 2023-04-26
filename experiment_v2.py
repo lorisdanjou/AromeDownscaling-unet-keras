@@ -24,7 +24,7 @@ Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params_in = ['t2m']
-params_out = ['t2m'] # ! ne fonctionne pas pour 2 sorties (utile pour le vent)
+params_out = ['t2m']
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
@@ -32,86 +32,107 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 echeances = range(6, 37, 3)
 output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/normalisations/normalisation/'
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/normalisations/normalisation/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
 
 
-'''
-Load data
-'''
-data_train = load_data(
+"""
+Load Data
+"""
+X_train_df = load_X(
     dates_train, 
     echeances,
     params_in,
-    params_out,
     data_train_location,
-    data_static_location=data_static_location,
-    static_fields=static_fields,
+    data_static_location,
+    static_fields = static_fields,
     resample=resample
 )
 
-data_valid = load_data(
+X_valid_df = load_X(
     dates_valid, 
     echeances,
     params_in,
-    params_out,
     data_valid_location,
-    data_static_location=data_static_location,
-    static_fields=static_fields,
+    data_static_location,
+    static_fields = static_fields,
     resample=resample
 )
 
-data_test = load_data(
+X_test_df = load_X(
     dates_test, 
     echeances,
     params_in,
-    params_out,
     data_test_location,
-    data_static_location=data_static_location,
-    static_fields=static_fields,
+    data_static_location,
+    static_fields = static_fields,
     resample=resample
+)
+
+y_train_df = load_y(
+    dates_train,
+    echeances,
+    params_out,
+    data_train_location
+)
+
+y_valid_df = load_y(
+    dates_valid,
+    echeances,
+    params_out,
+    data_valid_location
+)
+
+y_test_df = load_y(
+    dates_test,
+    echeances,
+    params_out,
+    data_test_location
 )
 
 t2 = perf_counter()
 print('loading time = ' + str(t2-t1))
 
 
-'''
+"""
 Preprocessing
-'''
-data_train = pad(data_train)
-data_valid = pad(data_valid)
-data_test = pad(data_test)
+"""
+# remove missing days
+X_train_df, y_train_df = delete_missing_days(X_train_df, y_train_df)
+X_valid_df, y_valid_df = delete_missing_days(X_valid_df, y_valid_df)
+X_test_df, y_test_df = delete_missing_days(X_test_df, y_test_df)
 
-get_max_abs(data_train, working_dir)
+# pad data
+X_train_df, y_train_df = pad(X_train_df), pad(y_train_df)
+X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
+X_test_df, y_test_df = pad(X_test_df), pad(y_test_df)
 
-data_train = normalisation(data_train, working_dir)
-data_valid = normalisation(data_valid, working_dir)
-data_test  = normalisation(data_test, working_dir)
+# Normalisation:
+get_max_abs_df(X_train_df, output_dir)
+X_train_df = normalisation(X_train_df, output_dir)
+X_valid_df = normalisation(X_valid_df, output_dir)
+X_test_df = normalisation(X_test_df, output_dir)
 
-X_train = to_array(data_train.X)
-y_train = to_array(data_train.y)
-X_valid = to_array(data_valid.X)
-y_valid = to_array(data_valid.y)
+X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
+X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
+X_test, y_test = df_to_array(X_test_df), df_to_array(y_test_df)
 
 t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
 
 
-
-'''
+"""
 Model definition
-'''
-unet = unet_maker_manu_r(data_train.X[0][:, :, :].shape)
+"""
+unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
 print('unet creation ok')
       
 
-'''
+"""
 Training
-'''
-LR, batch_size, epochs = 0.005, 32, 100
+"""
+LR, batch_size, epochs = 0.005, 32, 1
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -153,36 +174,27 @@ t4 = perf_counter()
 print('training time = ' + str(t4-t3))
 
 
-'''
+"""
 Prediction
-'''
-X_pred = to_array(data_test.X)
-y_pred = unet.predict(X_pred)
+"""
+y_pred = unet.predict(X_test)
 print(y_pred.shape)
-y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1], y_pred.shape[2]))
-# np.save(output_dir + 'y_pred_model.npy', y_pred, allow_pickle=True)
 
 t5 = perf_counter()
 print('predicting time = ' + str(t5-t3))
 
 
-'''
+"""
 Postprocessing
-'''
-data_pred = data_test.copy()
-for i in range(len(data_pred)):
-    data_pred.y[i] = y_pred[i, :, :, :]
-data_pred.to_pickle(output_dir + 'data_pred_model.csv')
-data_pred = denormalisation(data_pred, working_dir)
-data_pred = crop(data_pred)
+"""
+y_pred_df = y_test_df.copy()
+arrays_cols = get_arrays_cols(y_pred_df)
+for i in range(len(y_pred_df)):
+    for i_c, c in enumerate(arrays_cols):
+        y_pred_df[c][i] = y_pred[i, :, :, i_c]
 
-data_pred.to_pickle(output_dir + 'data_pred.csv')
+y_pred_df = crop(y_pred_df)
 
-# y_pred = to_array(data_pred.y)
-# y_pred = y_pred.reshape([data_pred.dates.nunique(), data_pred.echeances.nunique(), y_pred.shape[1], y_pred.shape[2]])
-# np.save(output_dir + 'y_pred.npy', y_pred, allow_pickle=True)
-
-# data_test = destandardisation(data_test)
-# data_test = crop(data_test) 
+y_pred_df.to_pickle(output_dir + 'y_pred.csv')
 
 
