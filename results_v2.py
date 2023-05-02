@@ -26,7 +26,7 @@ def biais(a, b):
 Load Data
 '''
 def load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
-    data_pred = pd.read_pickle(working_dir + 'data_pred.csv')
+    y_pred_df = pd.read_pickle(working_dir + 'y_pred.csv')
     results_df = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -72,7 +72,7 @@ def load_results(working_dir, dates_test, echeances, resample, data_test_locatio
                     'echeances' : [echeances[i_ech]],
                     'X_test' : [X_test[:, :, i_ech]],
                     'baseline' : [baseline[:, :, i_ech]],
-                    'y_pred' : data_pred[data_pred.dates == d.isoformat()][data_pred.echeances == ech].y.to_list(),
+                    'y_pred' : y_pred_df[y_pred_df.dates == d.isoformat()][y_pred_df.echeances == ech].t2m.to_list(),
                     'y_test' : [y_test[:, :, i_ech]]}
                 )
             except TypeError:
