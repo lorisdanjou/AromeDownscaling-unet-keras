@@ -25,13 +25,13 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params_in = ['t2m']
 params_out = ['t2m']
-static_fields = ['SURFGEOPOTENTIEL']
+static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/normalisations/normalisation/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/batch_size/16/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -101,27 +101,27 @@ Preprocessing
 # remove missing days
 X_train_df, y_train_df = delete_missing_days(X_train_df, y_train_df)
 X_valid_df, y_valid_df = delete_missing_days(X_valid_df, y_valid_df)
-X_test_df, y_test_df = delete_missing_days(X_test_df, y_test_df)
+X_test_df , y_test_df  = delete_missing_days(X_test_df, y_test_df)
 
 # pad data
 X_train_df, y_train_df = pad(X_train_df), pad(y_train_df)
 X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
-X_test_df, y_test_df = pad(X_test_df), pad(y_test_df)
+X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
 
 # Normalisation:
-# get_mean(X_train_df, output_dir)
-# get_std(X_train_df, output_dir)
+get_mean(X_train_df, output_dir)
+get_std(X_train_df, output_dir)
 # get_min(X_train_df, output_dir)
 # get_max(X_train_df, output_dir)
-get_max_abs(X_train_df, output_dir)
-X_train_df, y_train_df = normalisation(X_train_df, output_dir), normalisation(y_train_df, output_dir)
-X_valid_df, y_valid_df = normalisation(X_valid_df, output_dir), normalisation(y_valid_df, output_dir)
-X_test_df , y_test_df  = normalisation(X_test_df, output_dir) , normalisation(y_test_df, output_dir)
+# get_max_abs(X_train_df, output_dir)
+X_train_df, y_train_df = standardisation(X_train_df, output_dir), standardisation(y_train_df, output_dir)
+X_valid_df, y_valid_df = standardisation(X_valid_df, output_dir), standardisation(y_valid_df, output_dir)
+X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisation(y_test_df, output_dir)
 
 
 X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
 X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
-X_test, y_test = df_to_array(X_test_df), df_to_array(y_test_df)
+X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
 
 
 t3 = perf_counter()
@@ -138,7 +138,7 @@ print('unet creation ok')
 """
 Training
 """
-LR, batch_size, epochs = 0.005, 32, 100
+LR, batch_size, epochs = 0.005, 16, 100
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -199,7 +199,7 @@ for i in range(len(y_pred_df)):
     for i_c, c in enumerate(arrays_cols):
         y_pred_df[c][i] = y_pred[i, :, :, i_c]
 
-y_pred_df = denormalisation(y_pred_df, output_dir)
+y_pred_df = destandardisation(y_pred_df, output_dir)
 y_pred_df = crop(y_pred_df)
 
 y_pred_df.to_pickle(output_dir + 'y_pred.csv')

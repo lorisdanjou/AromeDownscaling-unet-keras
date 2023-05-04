@@ -45,11 +45,11 @@ def get_metric_tensor(eps, sca):
     
     dy = np.concatenate((dy_dx, dy_dy) , axis =0)
     
-    print(dx.shape, dy.shape)
+    # print(dx.shape, dy.shape)
     g = np.concatenate((dx, dy), axis = 0)
     
     ## sanitary symmetry check
-    print(np.abs(g[1,:,:]-g[2,:,:]).mean())
+    # print(np.abs(g[1,:,:]-g[2,:,:]).mean())
     
     
     return g.reshape(2, 2, C, H-1, W-1)

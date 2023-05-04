@@ -10,15 +10,14 @@ warnings.filterwarnings("ignore")
 
 
 
-def synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m', full=False):
+def synthesis_maps(expes_names, expes_results, output_dir, full=False):
     for k in range(10):
         if full:
-            fig, axs = plt.subplots(nrows=4, ncols=len(expes), figsize=(5*len(expes), 16))
+            fig, axs = plt.subplots(nrows=4, ncols=len(expes_names), figsize=(5*len(expes_names), 16))
             images = []
-            for j in range(len(expes)):
-                working_dir = expes.dir[j]
-                name = expes.name[j]
-                results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+            for j in range(len(expes_names)):
+                name = expes_names[j]
+                results_df = expes_results[j]
                 data = [results_df.X_test[k], results_df.baseline[k], results_df.y_pred[k], results_df.y_test[k]]
                 for i in range(len(data)):
                     im = axs[i, j].imshow(data[i], cmap='viridis')
@@ -37,12 +36,11 @@ def synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test
             fig.colorbar(images[0], ax=axs)
             plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png', bbox_inches='tight')
         else:
-            fig, axs = plt.subplots(nrows=1, ncols=len(expes), figsize=(5*len(expes), 4))
+            fig, axs = plt.subplots(nrows=1, ncols=len(expes_names), figsize=(5*len(expes_names), 4))
             images = []
-            for j in range(len(expes)):
-                working_dir = expes.dir[j]
-                name = expes.name[j]
-                results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+            for j in range(len(expes_names)):
+                name = expes_names[j]
+                results_df = expes_results[j]
                 im = axs[j].imshow(results_df.y_pred[k], cmap='viridis')
                 images.append(im)
                 axs[j].label_outer()
@@ -57,14 +55,13 @@ def synthesis_maps(expes, output_dir, dates_test, echeances, resample, data_test
             plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png', bbox_inches='tight')
 
 
-def synthesis_score_maps(expes, output_dir, metric, metric_name, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
+def synthesis_score_maps(expes_names, expes_results, output_dir, metric, metric_name):
     for k in range(10):
-        fig, axs = plt.subplots(nrows=1, ncols=len(expes)+1, figsize=(5*len(expes), 5))
+        fig, axs = plt.subplots(nrows=1, ncols=len(expes_names)+1, figsize=(5*len(expes_names), 5))
         images = []
-        for j in range(len(expes)):
-            working_dir = expes.dir[j]
-            name = expes.name[j]
-            results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+        for j in range(len(expes_names)):
+            name = expes_names[j]
+            results_df = expes_results[j]
             metric_df  = datewise_scores(results_df, metric, metric_name)
             im = axs[j].imshow(metric_df[metric_name + '_y_pred_map'][k], cmap='coolwarm')
             images.append(im)
@@ -84,15 +81,14 @@ def synthesis_score_maps(expes, output_dir, metric, metric_name, dates_test, ech
         plt.savefig(output_dir + metric_name + '_' + str(k) + '_map.png', bbox_inches='tight')
 
 
-def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test, echeances, resample, data_test_location, baseline_location, param):
+def synthesis_score_distribs(expes_names, expes_results, output_dir, metric, metric_name):
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
     D_terre = []
     D_mer = []
-    labels = list(expes.name) + ['baseline']
-    for i in range(len(expes)):
-        working_dir = expes.dir[i]
-        results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+    labels = expes_names + ['baseline']
+    for i in range(len(expes_names)):
+        results_df = expes_results[i]
         score_baseline = datewise_scores(results_df, metric, metric_name)[metric_name + '_baseline_mean']
         score_pred = datewise_scores(results_df, metric, metric_name)[metric_name + '_y_pred_mean']
         score_baseline_terre = datewise_scores_terre(results_df, metric, metric_name)[metric_name + '_baseline_mean']
@@ -109,7 +105,7 @@ def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test,
     axs[0].grid()
     axs[1].grid()
     axs[2].grid()
-    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -118,7 +114,7 @@ def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test,
                     capprops={"color": "C0", "linewidth": 1.5},
                     meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
                     labels=labels)
-    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -127,7 +123,7 @@ def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test,
                     capprops={"color": "C0", "linewidth": 1.5},
                     meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
                     labels=labels)
-    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -143,15 +139,14 @@ def synthesis_score_distribs(expes, output_dir, metric, metric_name, dates_test,
     plt.savefig(output_dir + 'synthesis_distributions_' +  metric_name + '.png', bbox_inches='tight')
 
 
-def synthesis_wasserstein_distance_distrib(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
+def synthesis_wasserstein_distance_distrib(expes_names, expes_results, output_dir):
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
     D_terre = []
     D_mer = []
-    labels = list(expes.name) + ['baseline']
-    for i in range(len(expes)):
-        working_dir = expes.dir[i]
-        results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+    labels = list(expes_names) + ['baseline']
+    for i in range(len(expes_names)):
+        results_df = expes_results[i]
 
         wd_df = datewise_wasserstein_distance(results_df)
         wd_df_baseline = wd_df['datewise_wasserstein_distance_baseline']
@@ -172,7 +167,7 @@ def synthesis_wasserstein_distance_distrib(expes, output_dir, dates_test, echean
     axs[0].grid()
     axs[1].grid()
     axs[2].grid()
-    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -181,7 +176,7 @@ def synthesis_wasserstein_distance_distrib(expes, output_dir, dates_test, echean
                     capprops={"color": "C0", "linewidth": 1.5},
                     meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
                     labels=labels)
-    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -190,7 +185,7 @@ def synthesis_wasserstein_distance_distrib(expes, output_dir, dates_test, echean
                     capprops={"color": "C0", "linewidth": 1.5},
                     meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
                     labels=labels)
-    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes)+1), 3), widths=1.5, patch_artist=True,
+    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
                     showmeans=True, meanline=True, showfliers=False,
                     medianprops={"color": "white", "linewidth": 0.5},
                     boxprops={"facecolor": "C0", "edgecolor": "white",
@@ -206,11 +201,10 @@ def synthesis_wasserstein_distance_distrib(expes, output_dir, dates_test, echean
     plt.savefig(output_dir + 'synthesis_distributions_wd.png', bbox_inches='tight')
 
 
-def synthesis_PSDs(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
-    fig, axs = plt.subplots(nrows=len(expes), ncols=1, figsize=(10, 4*len(expes)))
-    for i in range(len(expes)):
-        working_dir = expes.dir[i]
-        results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+def synthesis_PSDs(expes_names, expes_results, output_dir):
+    fig, axs = plt.subplots(nrows=len(expes_names), ncols=1, figsize=(10, 4*len(expes_names)))
+    for i in range(len(expes_names)):
+        results_df = expes_results[i]
         psd = PSD(results_df)
 
         axs[i].grid()
@@ -220,29 +214,29 @@ def synthesis_PSDs(expes, output_dir, dates_test, echeances, resample, data_test
         axs[i].plot(psd.psd_X_test, color='m', label='psd_X_test')
         axs[i].loglog()
         
-        axs[i].set_title('PSDs ' + expes.name[i])
+        axs[i].set_title('PSDs ' + expes_names[i])
     axs[0].legend()
     fig.savefig(output_dir + 'PSDs.png', bbox_inches='tight')
 
 
-def synthesis_corr_len(expes, output_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m'):
-    fig, axs = plt.subplots(nrows=1, ncols=len(expes)+2, figsize=(7*len(expes), 5))
+def synthesis_corr_len(expes_names, expes_results, output_dir):
+    cmap = colors.ListedColormap([(0, 0.2, 1, alpha) for alpha in np.linspace(0, 1, 8)])
+    fig, axs = plt.subplots(nrows=1, ncols=len(expes_names)+2, figsize=(7*len(expes_names), 5))
     images = []
-    for j in range(len(expes)):
-        working_dir = expes.dir[j]
-        name = expes.name[j]
-        results_df  = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+    for j in range(len(expes_names)):
+        name = expes_names[j]
+        results_df  = expes_results[j]
         corr_len_df = corr_len(results_df)
         
-        im = axs[j].imshow(corr_len_df.corr_len_pred[0], cmap='plasma')
+        im = axs[j].imshow(corr_len_df.corr_len_pred[0], cmap=cmap)
         images.append(im)
         axs[j].label_outer()
-        axs[j].set_title('correlation length y_pred' + name)
-    im = axs[j+1].imshow(corr_len_df.corr_len_baseline[0], cmap='plasma')
+        axs[j].set_title('corr length y_pred ' + name)
+    im = axs[j+1].imshow(corr_len_df.corr_len_baseline[0], cmap=cmap)
     images.append(im)
     axs[j+1].label_outer()
     axs[j+1].set_title('correlation length baseline')
-    im = axs[j+2].imshow(corr_len_df.corr_len_test[0], cmap='plasma')
+    im = axs[j+2].imshow(corr_len_df.corr_len_test[0], cmap=cmap)
     images.append(im)
     axs[j+1].label_outer()
     axs[j+2].set_title('correlation length test')
