@@ -24,24 +24,36 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 param = 't2m'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/params/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/'
 
 
 '''
 Define expes
 '''
-expes_names = ['t2m', 'toa', 'ts', 'tke', 'cape', 'uv10', 'SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
+expes_names = ['mae', 'mse', 'huber']
 expes_results = [
-    load_results(output_dir + 't2m/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'toa/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'ts/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'tke/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'cape/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'uv10/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'SURFGEOPOTENTIEL/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'SURFIND.TERREMER/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'SFX.BATHY/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+    load_results(output_dir + 'mae/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+    load_results(output_dir + 'mse/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+    load_results(output_dir + 'huber/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
 ]
+# expes_names = ['16', '32', '64']
+# expes_results = [
+#     load_results(output_dir + '16/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + '32/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + '64/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+# ]
+# expes_names = ['t2m', 'toa', 'ts', 'tke', 'cape', 'uv10', 'SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
+# expes_results = [
+#     load_results(output_dir + 't2m/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'toa/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'ts/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'tke/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'cape/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'uv10/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'SURFGEOPOTENTIEL/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'SURFIND.TERREMER/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'SFX.BATHY/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
+# ]
 
 
 '''

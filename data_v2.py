@@ -63,32 +63,49 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
     Inputs:
     Outputs : pansdas dataframe
     """
+    if resample in ['bl', 'bc']:
+        domain_shape = [210, 265]
+    elif resample =='r':
+        domain_shape = get_shape_500m()
+    else:
+        domain_shape = get_shape_2km5()
     data = pd.DataFrame(
         [], 
         columns = ['dates', 'echeances'] + params
     )
-    domain_shape_in  = get_shape_2km5(resample=resample)
-    domain_shape_out = get_shape_500m()
     for i_d, d in enumerate(dates):
         # chargement des données
-        X_d = np.zeros([len(echeances), domain_shape_in[0], domain_shape_in[1], len(params) + len(static_fields)], dtype=np.float32)
+        X_d = np.zeros([len(echeances), domain_shape[0], domain_shape[1], len(params) + len(static_fields)], dtype=np.float32)
         try:
             for i_p, p in enumerate(params):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
-                else:
+                elif resample == 'r':
                     filepath_X = data_location + 'oper_r_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                elif resample == 'bl':
+                    filepath_X = data_location + 'oper_bl_' + d.isoformat() + 'Z_' + p + '.npy'
+                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                elif resample == 'bc':
+                    filepath_X = data_location + 'oper_bc_' + d.isoformat() + 'Z_' + p + '.npy'
+                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                else:
+                    raise ValueError("resample mal défini")
         # champs statiques
             for i_s, s in enumerate(static_fields):
-                if resample == 'r':
+                if resample in ['r', 'bl', 'bc']:
                     filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
-                    # filepath_static = data_static_location + 'static_oper_r_' + s + '.npy'
-                else:
+                elif resample =='c':
                     filepath_static = data_static_location + 'static_oper_c_' + s + '.npy'
+                else:
+                    raise ValueError("resample mal défini")
+                
                 for i_ech, ech in enumerate(echeances):
                     X_d[i_ech, :, :, len(params) + i_s] = np.load(filepath_static)
+
+            if resample in ['bl', 'bc']:
+                X_d = np.pad(X_d, ((0,0), (5,4), (2,5), (0,0)), mode='edge')
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
             X_d = None
@@ -174,10 +191,10 @@ def delete_missing_days(X_df, y_df):
     """
     X_df_out = X_df.copy()
     y_df_out = y_df.copy()
-    nan_indices_y = y_df[y_df.isna().any(axis=1)].index
+    nan_indices_y = y_df_out[y_df_out.isna().any(axis=1)].index
     y_df_out = y_df_out.drop(index=nan_indices_y, axis = 0)
     X_df_out = X_df_out.drop(index=nan_indices_y, axis = 0)
-    nan_indices_X = X_df[X_df.isna().any(axis=1)].index
+    nan_indices_X = X_df_out[X_df_out.isna().any(axis=1)].index
     X_df_out = X_df_out.drop(index=nan_indices_X, axis = 0)
     y_df_out = y_df_out.drop(index=nan_indices_X, axis = 0)
 
@@ -612,7 +629,6 @@ def mean_denorm(df, working_dir):
         for i_c, c in enumerate(arrays_cols):
             df_norm[c][i] = df_norm[c][i]  * (max_X[i_c] - min_X[i_c]) + mean_X[i_c]
     return df_norm
-
 
 
 ###############################################################################################################################

@@ -3,11 +3,15 @@ import random as rn
 from bronx.stdtypes.date import daterangex as rangex
 from make_unet import *
 import matplotlib.pyplot as plt
-from data_v2 import *
+from preprocessing.load_data import *
+from preprocessing.normalisations import *
 from time import perf_counter
 # import warnings
 
 # warnings.filterwarnings("ignore")
+
+physical_devices = tf.config.list_physical_devices()
+print(physical_devices)
 
 t0 = perf_counter()
 
@@ -29,9 +33,9 @@ static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
-resample = 'r'
+resample = 'bl'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/batch_size/16/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/interp/bl/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -123,6 +127,12 @@ X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
 X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
 X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
 
+# if OOM :
+# with tf.device('cpu:0'):
+#     train = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(4*128).batch(128)
+#     valid = tf.data.Dataset.from_tensor_slices((X_valid, y_valid)).batch(128)
+#     test = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(128)
+# print(train)
 
 t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
@@ -138,7 +148,7 @@ print('unet creation ok')
 """
 Training
 """
-LR, batch_size, epochs = 0.005, 16, 100
+LR, batch_size, epochs = 0.005, 32, 100
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -150,6 +160,13 @@ history = unet.fit(X_train, y_train,
          validation_data=(X_valid, y_valid), 
          callbacks = callbacks,
          verbose=2, shuffle=True, validation_split=0.1)
+
+# if OOM :
+# history = unet.fit(train, 
+#          batch_size=batch_size, epochs=epochs,  
+#          validation_data=valid, 
+#          callbacks = callbacks,
+#          verbose=2, shuffle=True)#, validation_split=0.1)
 
 unet.summary()
 print(history.history.keys())

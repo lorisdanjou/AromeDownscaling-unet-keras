@@ -40,8 +40,19 @@ def load_results(working_dir, dates_test, echeances, resample, data_test_locatio
         try:
             if resample == 'c':
                 filepath_X_test = data_test_location + 'oper_c_' + d.isoformat() + 'Z_' + param + '.npy'
-            else:
+            elif resample == 'r':
                 filepath_X_test = data_test_location + 'oper_r_' + d.isoformat() + 'Z_' + param + '.npy'
+            elif resample == 'bl':
+                filepath_X_test = data_test_location + 'oper_bl_' + d.isoformat() + 'Z_' + param + '.npy'
+            elif resample == 'bc':
+                filepath_X_test = data_test_location + 'oper_bc_' + d.isoformat() + 'Z_' + param + '.npy'
+            else:
+                raise ValueError("resample mal défini")
+        # try:
+        #     if resample == 'c':
+        #         filepath_X_test = data_test_location + 'oper_c_' + d.isoformat() + 'Z_' + param + '.npy'
+        #     else:
+        #         filepath_X_test = data_test_location + 'oper_r_' + d.isoformat() + 'Z_' + param + '.npy'
             X_test = np.load(filepath_X_test)
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
@@ -337,7 +348,7 @@ def plot_results(results_df, param,  output_dir):
         axs[2].set_title('y_pred')
         axs[3].set_title('y_test')
         fig.colorbar(images[0], ax=axs)
-        plt.savefig(output_dir + 'results_' + str(i) + '_' + param + '.png')
+        plt.savefig(output_dir + 'results_' + str(i) + '_' + param + '.png', bbox_inches='tight')
 
 
 def plot_score_maps(results_df, metric, metric_name, output_dir):
