@@ -25,7 +25,7 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
     Outputs : pansdas dataframe
     """
     if resample in ['bl', 'bc']:
-        domain_shape = [210, 265]
+        domain_shape = [205, 260]
     elif resample =='r':
         domain_shape = get_shape_500m()
     else:

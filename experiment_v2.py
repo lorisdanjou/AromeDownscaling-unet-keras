@@ -33,9 +33,9 @@ static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
-resample = 'bl'
+resample = 'bc'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/interp/bl/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/interp/bc/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))

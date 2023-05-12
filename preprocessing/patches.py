@@ -2,6 +2,8 @@ import random
 import numpy as np
 import pandas as pd
 from preprocessing.load_data import get_arrays_cols, param_to_array
+from patchify import patchify, unpatchify
+from math import gcd
 
 
 # Dans le cas de deux df de même tailles
@@ -52,5 +54,59 @@ def extract_patches(X_df, y_df, patch_h, patch_w, n_patches):
             X_df_out = pd.concat([X_df_out, X_df_i])
             y_df_out = pd.concat([y_df_out, y_df_i])
     return X_df_out.reset_index(drop=True), y_df_out.reset_index(drop=True)
+
+
+def extract_patches_patchify(df, patch_size):
+
+    channels = get_arrays_cols(df)
+    img_h = df[channels[0]][0].shape[0]
+    img_w = df[channels[0]][0].shape[1]
+
+    # définition datafram vide de sortie:
+    df_out = pd.DataFrame(
+        [],
+        columns = df.columns
+    )
+
+    step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
+
+    for i in range(len(df)):
+        # un dataframe par validité pour contenir les patchs
+        df_i = pd.DataFrame(
+            [],
+            columns = []
+        )
+        for i_c, c in enumerate(channels):
+            X = df[c][i]
+            # extraction des patchs
+            patches = patchify(X, (patch_size, patch_size), step=step)
+            patches = patches.reshape((-1, patch_size, patch_size))
+
+            # création d'un dataframe à une colonne contenant tous les patchs pour une validité et un channel donné
+            values_c = []
+            for j in range(patches.shape[0]):
+                values_c.append([patches[j, :, :]])
+            df_c = pd.DataFrame(
+                values_c,
+                columns=[c]
+            )
+
+            # concaténation de tous les channels pour une validité donnée
+            df_i = pd.concat([df_i, df_c], axis=1)
+            # ajout des dates et échéances
+            dates_ech = pd.DataFrame(
+                np.array([[df.dates[i] for j in range(len(df_i))], [df.echeances[i] for j in range(len(df_i))]]).transpose(), 
+                columns = ['dates', 'echeances']
+            )
+        df_i = pd.concat([dates_ech, df_i], axis=1)
+
+        df_out = pd.concat([df_out, df_i], axis=0)
+
+    return df_out.reset_index(drop=True)
+
+
+
+    
+
 
 
