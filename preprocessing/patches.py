@@ -8,6 +8,18 @@ from math import gcd
 
 # Dans le cas de deux df de même tailles
 def extract_patches(X_df, y_df, patch_h, patch_w, n_patches):
+    """
+    Randomly extracts n_patches of size (patch_h, patch_w) in each X and y samples.
+    Inputs : 
+        X_df : A pandas dataframe dontaining the input samples (loaded with preprocessing.load_data)
+        y_df : A pandas dataframe dontaining the output samples 
+        patch_h : height of the patch
+        patch_w : width of the patch
+        n_patches : number of patches to extract in each sample
+    Outputs : 
+        2 new pandas dataframs containing the patches
+    """
+
     arrays_cols_X = get_arrays_cols(X_df)
     arrays_cols_y = get_arrays_cols(y_df)
     img_h = X_df[arrays_cols_X[0]][0].shape[0]
@@ -57,7 +69,14 @@ def extract_patches(X_df, y_df, patch_h, patch_w, n_patches):
 
 
 def extract_patches_patchify(df, patch_size):
-
+    """
+    Uses the Patchify package to extract patches in each samples of a dataset. The goal is then to be able to rebuild the dataset withs the patches
+    Inputs : 
+        df : a dataframe containing the samples (inputs or outputs)
+        patch_size : the size of a side of the patch
+    Output : 
+        A new dataframe
+    """
     channels = get_arrays_cols(df)
     img_h = df[channels[0]][0].shape[0]
     img_w = df[channels[0]][0].shape[1]
@@ -105,8 +124,46 @@ def extract_patches_patchify(df, patch_size):
     return df_out.reset_index(drop=True)
 
 
+def rebuild_from_patchify(df_patches, img_h, img_w):
+    """
+    Rebuilds the images given a dataset of patches
+    Inputs:
+        df_patches : a pandas dataframe containing the patches
+        img_h : height of the full image
+        img_w : width of the full image
+    Output : 
+        A pandas dataframe containing the full images
+    """
+    channels = get_arrays_cols(df_patches)
+    patch_size = df_patches[channels[0]][0].shape[0]
+    img_example = np.zeros((img_h, img_w))
+    step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
+    shape_patches = patchify(img_example, (patch_size, patch_size), step=step).shape
 
-    
+    df_out = pd.DataFrame(
+        [],
+        columns=df_patches.columns
+    )
 
+    dates = df_patches.dates.drop_duplicates().to_list()
+    echeances = df_patches.echeances.drop_duplicates().to_list()
 
+    for i_d, d in enumerate(dates):
+        for i_ech, ech in enumerate(echeances):
+            values = []
+            for i_c, c in enumerate(channels):
+                df_patches_i = df_patches.loc[(df_patches.echeances==ech) & (df_patches.dates==d)]
+                patches = np.zeros((len(df_patches_i), patch_size, patch_size))
+                for j in range(len(df_patches_i)):
+                    patches[j, :, :] = df_patches_i[c].iloc[j]
+                patches = patches.reshape(shape_patches)
+                img = unpatchify(patches, (img_h, img_w))
+                values.append(img)
+            
+            df_out_i = pd.DataFrame(
+                [[d, ech] + values],
+                columns = df_patches.columns
+            )
+            df_out = pd.concat([df_out, df_out_i], axis=0)
 
+    return df_out.reset_index(drop=True)
