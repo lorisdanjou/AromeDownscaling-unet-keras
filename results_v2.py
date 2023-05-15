@@ -59,8 +59,8 @@ def load_results(working_dir, dates_test, echeances, resample, data_test_locatio
             X_test = None
 
         # Load baseline : 
-        filepath_baseline = baseline_location + 'GG9B_' + d.isoformat() + 'Z_' + param + '.npy'
-        baseline = np.load(filepath_baseline)
+        # filepath_baseline = baseline_location + 'GG9B_' + d.isoformat() + 'Z_' + param + '.npy'
+        # baseline = np.load(filepath_baseline)
         try:
             filepath_baseline = baseline_location + 'GG9B_' + d.isoformat() + 'Z_' + param + '.npy'
             baseline = np.load(filepath_baseline)

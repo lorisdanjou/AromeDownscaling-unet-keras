@@ -113,10 +113,10 @@ def extract_patches_patchify(df, patch_size):
             # concaténation de tous les channels pour une validité donnée
             df_i = pd.concat([df_i, df_c], axis=1)
             # ajout des dates et échéances
-            dates_ech = pd.DataFrame(
-                np.array([[df.dates[i] for j in range(len(df_i))], [df.echeances[i] for j in range(len(df_i))]]).transpose(), 
-                columns = ['dates', 'echeances']
-            )
+            dates_ech = pd.DataFrame([], columns = ['dates', 'echeances'])
+            for _ in range(len(df_i)):
+                dates_ech.loc[len(dates_ech)] = [df.dates[i], df.echeances[i]]
+
         df_i = pd.concat([dates_ech, df_i], axis=1)
 
         df_out = pd.concat([df_out, df_i], axis=0)
@@ -167,3 +167,28 @@ def rebuild_from_patchify(df_patches, img_h, img_w):
             df_out = pd.concat([df_out, df_out_i], axis=0)
 
     return df_out.reset_index(drop=True)
+
+
+# padding for patchify
+def pad_for_patchify(df):
+    df_out = df.copy()
+    channels = get_arrays_cols(df)
+    for c in channels:
+        for i in range(len(df_out)):
+            df_out[c][i] = np.pad(df_out[c][i], ((21,21), (27,26)), mode='reflect')
+    return df_out
+
+def crop_for_patchify(df):
+    df_out = df.copy()
+    channels = get_arrays_cols(df)
+    for c in channels:
+        for i in range(len(df_out)):
+            df_out[c][i] = df_out[c][i][21:-21, 27:-26]
+    return df_out
+
+def n_patches(img_h, img_w, patch_size):
+    img = np.zeros((img_h, img_w))
+    step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
+    patches = patchify(img,  (patch_size, patch_size), step=step)
+
+    return step, patches.shape[0]*patches.shape[1]
