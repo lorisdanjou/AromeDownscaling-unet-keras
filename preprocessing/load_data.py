@@ -54,6 +54,7 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
                 else:
                     raise ValueError("resample mal défini")
         # champs statiques
+        # ! erreur chargement bc bl des champs statiques à corriger
             for i_s, s in enumerate(static_fields):
                 if resample in ['r', 'bl', 'bc']:
                     filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
@@ -165,7 +166,7 @@ def delete_missing_days(X_df, y_df):
 def get_arrays_cols(df):
     arrays_cols = []
     for c in df.columns:
-        if type(df[c][0]) == np.ndarray:
+        if type(df[c].iloc[0]) == np.ndarray:
             arrays_cols.append(c)
     return arrays_cols
 
@@ -214,9 +215,9 @@ def df_to_array(df):
     """
     arrays_cols = get_arrays_cols(df)
             
-    array = np.zeros((len(df), df[arrays_cols[0]][0].shape[0], df[arrays_cols[0]][0].shape[1], len(arrays_cols)), dtype=np.float32)
+    array = np.zeros((len(df), df[arrays_cols[0]].iloc[0].shape[0], df[arrays_cols[0]].iloc[0].shape[1], len(arrays_cols)), dtype=np.float32)
 
     for i in range(len(df)):
         for i_c, c in enumerate(arrays_cols):
-            array[i, :, :, i_c] = df[c][i]
+            array[i, :, :, i_c] = df[c].iloc[i]
     return array

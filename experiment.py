@@ -27,15 +27,16 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 Setup
 '''
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params_in = ['t2m']
+params_in = ['t2m', 'tke', 'toa', 'ts', 'u10', 'v10', 'cape']
 params_out = ['t2m']
+# static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
-resample = 'bc'
+resample = 'r'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/interp/bc/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/patches_random/128-12/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -115,9 +116,6 @@ X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
 # Normalisation:
 get_mean(X_train_df, output_dir)
 get_std(X_train_df, output_dir)
-# get_min(X_train_df, output_dir)
-# get_max(X_train_df, output_dir)
-# get_max_abs(X_train_df, output_dir)
 X_train_df, y_train_df = standardisation(X_train_df, output_dir), standardisation(y_train_df, output_dir)
 X_valid_df, y_valid_df = standardisation(X_valid_df, output_dir), standardisation(y_valid_df, output_dir)
 X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisation(y_test_df, output_dir)
@@ -128,11 +126,11 @@ X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
 X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
 
 # if OOM :
-# with tf.device('cpu:0'):
-#     train = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(4*128).batch(128)
-#     valid = tf.data.Dataset.from_tensor_slices((X_valid, y_valid)).batch(128)
-#     test = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(128)
-# print(train)
+with tf.device('cpu:0'):
+    train = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(100).batch(1)
+    valid = tf.data.Dataset.from_tensor_slices((X_valid, y_valid)).batch(1)
+    test = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(1)
+print(train)
 
 t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
@@ -148,25 +146,25 @@ print('unet creation ok')
 """
 Training
 """
-LR, batch_size, epochs = 0.005, 32, 100
+LR, batch_size, epochs = 0.005, 1, 100
 unet.compile(optimizer=Adam(lr=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
              ModelCheckpoint(output_dir + model_name, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
 
-history = unet.fit(X_train, y_train, 
-         batch_size=batch_size, epochs=epochs,  
-         validation_data=(X_valid, y_valid), 
-         callbacks = callbacks,
-         verbose=2, shuffle=True, validation_split=0.1)
+# history = unet.fit(X_train, y_train, 
+#          batch_size=batch_size, epochs=epochs,  
+#          validation_data=(X_valid, y_valid), 
+#          callbacks = callbacks,
+#          verbose=2, shuffle=True, validation_split=0.1)
 
 # if OOM :
-# history = unet.fit(train, 
-#          batch_size=batch_size, epochs=epochs,  
-#          validation_data=valid, 
-#          callbacks = callbacks,
-#          verbose=2, shuffle=True)#, validation_split=0.1)
+history = unet.fit(train, 
+         batch_size=batch_size, epochs=epochs,  
+         validation_data=valid, 
+         callbacks = callbacks,
+         verbose=2, shuffle=True)#, validation_split=0.1)
 
 unet.summary()
 print(history.history.keys())

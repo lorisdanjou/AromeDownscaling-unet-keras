@@ -26,7 +26,7 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 param = 't2m'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/patches/tests/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/params/all_params/'
 
 
 '''

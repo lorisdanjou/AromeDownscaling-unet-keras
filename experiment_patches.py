@@ -30,13 +30,13 @@ Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params_in = ['t2m']
 params_out = ['t2m']
-static_fields = ['SURFIND.TERREMER']
+static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/patches/tests/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/patches_random/128-12/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -121,7 +121,7 @@ X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisatio
 
 # patches
 patch_size = 128
-n_patches  = 4
+n_patches  = 12
 X_train_patches_df, y_train_patches_df = extract_patches(X_train_df, y_train_df, patch_size, patch_size, n_patches)
 
 
