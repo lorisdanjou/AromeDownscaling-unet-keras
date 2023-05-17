@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from preprocessing.load_data import *
 from preprocessing.normalisations import *
 from time import perf_counter
+from generator import DataGenerator
 # import warnings
 
 # warnings.filterwarnings("ignore")
@@ -23,20 +24,20 @@ baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/'
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
 
-'''
+"""
 Setup
-'''
-# params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params_in = ['t2m']
+"""
+params_in = ['t2m', 'tke', 'toa', 'ts', 'u10', 'v10', 'cape']
 params_out = ['t2m']
-static_fields = []
+static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/params/all_params/'
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/0.55-terre_mer/'
+
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -111,7 +112,7 @@ X_test_df , y_test_df  = delete_missing_days(X_test_df, y_test_df)
 # pad data
 X_train_df, y_train_df = pad(X_train_df), pad(y_train_df)
 X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
-X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
+X_test_df , y_test_df  = pad(X_test_df) , pad(y_test_df)
 
 # Normalisation:
 get_mean(X_train_df, output_dir)
@@ -121,9 +122,9 @@ X_valid_df, y_valid_df = standardisation(X_valid_df, output_dir), standardisatio
 X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisation(y_test_df, output_dir)
 
 
-X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
-X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
-X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
+train_generator = DataGenerator(X_train_df, y_train_df, batch_size)
+valid_generator = DataGenerator(X_valid_df, y_valid_df, batch_size)
+X_test, y_test = df_to_array(X_test_df), df_to_array(y_test_df)
 
 # if OOM :
 # with tf.device('cpu:0'):
@@ -139,31 +140,31 @@ print('preprocessing time = ' + str(t3-t2))
 """
 Model definition
 """
-unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
+unet = unet_maker_manu_r((None, None, len(params_in) + len(static_fields))) 
 print('unet creation ok')
       
 
 """
 Training
 """
-unet.compile(optimizer=Adam(learning_rate=LR), loss=mse_terre_mer_k, metrics=[rmse_k])  
+unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
              ModelCheckpoint(output_dir + model_name, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
 
-history = unet.fit(X_train, y_train, 
-         batch_size=batch_size, epochs=epochs,  
-         validation_data=(X_valid, y_valid), 
-         callbacks = callbacks,
-         verbose=2, shuffle=True)# validation_split=0.1)
+# history = unet.fit(X_train, y_train, 
+#          batch_size=batch_size, epochs=epochs,  
+#          validation_data=(X_valid, y_valid), 
+#          callbacks = callbacks,
+#          verbose=2, shuffle=True, validation_split=0.1)
 
 # if OOM :
-# history = unet.fit(train, 
-#          batch_size=batch_size, epochs=epochs,  
-#          validation_data=valid, 
-#          callbacks = callbacks,
-#          verbose=2, shuffle=True)#, validation_split=0.1)
+history = unet.fit(train_generator, 
+         batch_size=batch_size, epochs=epochs,  
+         validation_data=valid_generator, 
+         callbacks = callbacks,
+         verbose=2, shuffle=True)#, validation_split=0.1)
 
 unet.summary()
 print(history.history.keys())
@@ -217,5 +218,3 @@ y_pred_df = destandardisation(y_pred_df, output_dir)
 y_pred_df = crop(y_pred_df)
 
 y_pred_df.to_pickle(output_dir + 'y_pred.csv')
-
-

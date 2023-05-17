@@ -14,9 +14,7 @@ data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
 data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/'
 
-'''
-Setup
-'''
+# ========== Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ['t2m']
 static_fields = []
@@ -26,27 +24,23 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 param = 't2m'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/params/all_params/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/data_augmentation/0.1-flip/'
 
 
-'''
-Load Data
-'''
+# ========== Load Data
 results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param=param)
 
 
-'''
-Plots
-'''
+# ========== Plots
 plot_results(results_df, param, working_dir)
 plot_score_maps(results_df, mae, 'mae', working_dir)
 # plot_distrib(results_df, mse, 'mse', working_dir)
 plot_distrib(results_df, mae, 'mae', working_dir)
 # plot_datewise_wasserstein_distance_distrib(results_df, working_dir)
 # plot_cor_len(results_df, working_dir)
-'''
-Print mean scores
-'''
+
+
+# ========== Print mean scores
 mse_global_df = datewise_scores(results_df, mse, 'mse') 
 mse_terre_df  = datewise_scores_terre(results_df, mse, 'mse')
 mse_mer_df    = datewise_scores_mer(results_df, mse, 'mse')
@@ -62,9 +56,8 @@ print('  mer:')
 print('    baseline : ' + str(mse_mer_df['mse_baseline_mean'].mean()))
 print('    prediction : ' + str(mse_mer_df['mse_y_pred_mean'].mean()))
 
-# '''
-# Correlation length
-# '''
+
+# ========== Correlation length
 # corr_len_df = corr_len(results_df)
 
 # print('correlation lenght :')
