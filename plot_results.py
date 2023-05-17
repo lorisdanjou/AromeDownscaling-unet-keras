@@ -24,7 +24,7 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 param = 't2m'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/data_augmentation/0.1-flip/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/0.55-terre_mer/'
 
 
 # ========== Load Data

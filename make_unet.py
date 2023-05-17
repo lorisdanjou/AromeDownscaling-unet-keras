@@ -213,7 +213,7 @@ def unet_maker_complete_upsampling(shape_input, shape_output, layers = 4, filter
 
 
 # Nécessite un imput de la bonne taille (largeur et hauteur de l'image divisibles par 2**layers)
-def unet_maker_manu_r(shape_input, layers = 4, filters = 32):
+def unet_maker_manu_r(shape_input, channels_out, layers = 4, filters = 32):
     inputs_list=[]
     inputs = keras.Input(shape = shape_input)
     inputs_list.append(inputs)
@@ -233,5 +233,5 @@ def unet_maker_manu_r(shape_input, layers = 4, filters = 32):
         up=block_up_conc(up,filters*2**i,conv_down[i])
         print('up conc : ', i)
 
-    last=Conv2D(1, 1, padding='same')(up)
+    last=Conv2D(channels_out, 1, padding='same')(up)
     return (keras.models.Model(inputs=inputs_list, outputs=last))

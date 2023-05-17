@@ -83,7 +83,7 @@ def load_results(working_dir, dates_test, echeances, resample, data_test_locatio
                     'echeances' : [echeances[i_ech]],
                     'X_test' : [X_test[:, :, i_ech]],
                     'baseline' : [baseline[:, :, i_ech]],
-                    'y_pred' : y_pred_df[y_pred_df.dates == d.isoformat()][y_pred_df.echeances == ech].t2m.to_list(),
+                    'y_pred' : y_pred_df[y_pred_df.dates == d.isoformat()][y_pred_df.echeances == ech][param].to_list(),
                     'y_test' : [y_test[:, :, i_ech]]}
                 )
             except TypeError:
