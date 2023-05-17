@@ -23,12 +23,10 @@ baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/'
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
 
-'''
-Setup
-'''
+# ========== Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params_in = ['t2m']
-params_out = ['t2m']
+params_in = ['u10', 'v10']
+params_out = ['u10', 'v10']
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
@@ -36,15 +34,13 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/0.55-terre_mer/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
 
 
-"""
-Load Data
-"""
+# ========== Load data
 X_train_df = load_X(
     dates_train, 
     echeances,
@@ -100,9 +96,7 @@ t2 = perf_counter()
 print('loading time = ' + str(t2-t1))
 
 
-"""
-Preprocessing
-"""
+# ========== Preprocessing
 # remove missing days
 X_train_df, y_train_df = delete_missing_days(X_train_df, y_train_df)
 X_valid_df, y_valid_df = delete_missing_days(X_valid_df, y_valid_df)
@@ -125,27 +119,17 @@ X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
 X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
 X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
 
-# if OOM :
-# with tf.device('cpu:0'):
-#     train = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(100).batch(1)
-#     valid = tf.data.Dataset.from_tensor_slices((X_valid, y_valid)).batch(1)
-#     test = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(1)
-# print(train)
 
 t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
 
 
-"""
-Model definition
-"""
+# ========== Model definition
 unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
 print('unet creation ok')
       
 
-"""
-Training
-"""
+# ========== Training
 unet.compile(optimizer=Adam(learning_rate=LR), loss=mse_terre_mer_k, metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
@@ -156,19 +140,13 @@ history = unet.fit(X_train, y_train,
          batch_size=batch_size, epochs=epochs,  
          validation_data=(X_valid, y_valid), 
          callbacks = callbacks,
-         verbose=2, shuffle=True)# validation_split=0.1)
+         verbose=2, shuffle=True)
 
-# if OOM :
-# history = unet.fit(train, 
-#          batch_size=batch_size, epochs=epochs,  
-#          validation_data=valid, 
-#          callbacks = callbacks,
-#          verbose=2, shuffle=True)#, validation_split=0.1)
 
 unet.summary()
 print(history.history.keys())
 
-# Curves :
+# ========== Curves
 # summarize history for accuracy
 accuracy_curve = plt.figure()
 plt.plot(history.history['rmse_k'])
@@ -194,9 +172,7 @@ t4 = perf_counter()
 print('training time = ' + str(t4-t3))
 
 
-"""
-Prediction
-"""
+# ========== Prediction
 y_pred = unet.predict(X_test)
 print(y_pred.shape)
 
@@ -204,9 +180,7 @@ t5 = perf_counter()
 print('predicting time = ' + str(t5-t3))
 
 
-"""
-Postprocessing
-"""
+# ========== Postprocessing
 y_pred_df = y_test_df.copy()
 arrays_cols = get_arrays_cols(y_pred_df)
 for i in range(len(y_pred_df)):
