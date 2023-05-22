@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from results import *
-from synthesis import *
+from results.results import *
+from results.synthesis import *
 from bronx.stdtypes.date import daterangex as rangex
 import matplotlib.pyplot as plt
 from matplotlib import colors

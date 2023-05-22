@@ -1,7 +1,8 @@
 import numpy as np 
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
-from make_unet import *
+from training.imports4training import *
+from unet.architectures import *
 import matplotlib.pyplot as plt
 from preprocessing.load_data import *
 from preprocessing.normalisations import *
@@ -34,7 +35,7 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/0.6-terre_mer/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
