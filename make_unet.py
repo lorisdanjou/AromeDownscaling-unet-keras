@@ -36,7 +36,7 @@ def mse_k(y_true, y_pred):
 
 
 def mse_terre_mer_k(y_true, y_pred): # fonctionne pour des inputs complets adaptés à la grille de sortie (interpolation nearest, bl ou bc)
-    frac = 0.55
+    frac = 0.6
     shape = y_true.get_shape()[1:4]
     ind_terre_mer = np.load('/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy', allow_pickle=True)
     ind_terre_mer = np.pad(ind_terre_mer, ((5,5), (2,3)), mode='reflect')

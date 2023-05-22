@@ -25,8 +25,8 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
 # ========== Setup
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
-params_in = ['t2m']
-params_out = ['t2m']
+params_in = ['u10', 'v10']
+params_out = ['u10', 'v10']
 static_fields = []
 dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
 dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
@@ -34,7 +34,7 @@ dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H
 resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/losses/0.6-terre_mer/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -124,12 +124,12 @@ print('preprocessing time = ' + str(t3-t2))
 
 
 # ========== Model definition
-unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
+unet = unet_maker_manu_r(X_train[0, :, :, :].shape, output_channels=len(params_out))
 print('unet creation ok')
       
 
 # ========== Training
-unet.compile(optimizer=Adam(learning_rate=LR), loss=mse_terre_mer_k, metrics=[rmse_k])  
+unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k])  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
