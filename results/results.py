@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import scipy.stats as sc
+from skimage.metrics import structural_similarity
 from metrics4arome.spectrum_analysis import *
 from metrics4arome.length_scales import *
 
@@ -21,6 +22,16 @@ def mae(a, b):
 
 def biais(a, b):
     return a - b
+
+def ssim(a, b):
+    ssim_m, ssim_map = structural_similarity(
+        a,
+        b, 
+        data_range=b.max() - b.min(),
+        win_size=None,
+        full=True
+    )
+    return ssim_map
 
 '''
 Load Data
@@ -301,30 +312,82 @@ def corr_len(results_df):
         'corr_len_pred' : [corr_len_pred[0, :, :]],
         'corr_len_baseline' : [corr_len_baseline[0, :, :]]}
     )
-
-    # corr_len_pred = np.zeros((len(results_df), results_df.y_pred[0].shape[0]-1, results_df.y_pred[0].shape[1]-1))
-    # corr_len_test = np.zeros((len(results_df), results_df.y_test[0].shape[0]-1, results_df.y_test[0].shape[1]-1))
-    # corr_len_baseline = np.zeros((len(results_df), results_df.baseline[0].shape[0]-1, results_df.baseline[0].shape[1]-1))
-
-    # for k in range(len(results_df)):
-    #     y_pred = np.zeros((1, 1, results_df.y_pred[k].shape[0], results_df.y_pred[k].shape[1]))
-    #     y_test = np.zeros((1, 1, results_df.y_test[k].shape[0], results_df.y_test[k].shape[1]))
-    #     baseline = np.zeros((1, 1, results_df.baseline[k].shape[0], results_df.baseline[k].shape[1]))
-
-    #     y_test[0, 0, :, :] = results_df.y_test[k]
-    #     y_pred[0, 0, :, :] = results_df.y_pred[k]
-    #     baseline[0, 0, :, :] = results_df.baseline[k]
-
-    #     corr_len_test[k, :, :] = length_scale(y_test, sca=2.5)
-    #     corr_len_pred[k, :, :] = length_scale(y_pred, sca=2.5)
-    #     corr_len_baseline[k, :, :] = length_scale(baseline, sca=2.5)
-
-    # corr_len_df = pd.DataFrame(
-    #     {'corr_len_test': [corr_len_test[:, :, :].mean(axis=0)],
-    #     'corr_len_pred' : [corr_len_pred[:, :, :].mean(axis=0)],
-    #     'corr_len_baseline' : [corr_len_baseline[:, :, :].mean(axis=0)]}
-    # )
     return corr_len_df
+
+
+def correlation(results_df):
+    corr_df = pd.DataFrame(
+        [],
+        columns=['dates', 'echeances', 'r_baseline', 'r_pred']
+    )
+    for i in range(len(results_df)):
+        r_baseline, _ = sc.pearsonr(results_df.y_test.iloc[i].reshape(-1), results_df.baseline.iloc[i].reshape(-1))
+        r_pred    , _ = sc.pearsonr(results_df.y_test.iloc[i].reshape(-1), results_df.y_pred.iloc[i].reshape(-1))
+        corr_df.loc[len(corr_df)] = [
+            results_df.dates.iloc[i],
+            results_df.echeances.iloc[i],
+            r_baseline,
+            r_pred
+        ]
+    return corr_df
+
+
+def correlation_terre(results_df): # using masks
+    ind_terre_mer = get_ind_terre_mer_500m()
+    corr_df = pd.DataFrame(
+        [],
+        columns=['dates', 'echeances', 'r_baseline', 'r_pred']
+    )
+    for i in range(len(results_df)):
+        y_test = np.ma.masked_array(results_df.y_test.iloc[i], (1-ind_terre_mer))
+        y_pred = np.ma.masked_array(results_df.y_pred.iloc[i], (1-ind_terre_mer))
+        baseline = np.ma.masked_array(results_df.baseline.iloc[i], (1-ind_terre_mer))
+
+        r_baseline, _ = sc.pearsonr(
+            baseline.reshape(-1),
+            y_test.reshape(-1)
+        )
+        r_pred    , _ = sc.pearsonr(
+            y_pred.reshape(-1),
+            y_test.reshape(-1)
+        )
+        corr_df.loc[len(corr_df)] = [
+            results_df.dates.iloc[i],
+            results_df.echeances.iloc[i],
+            r_baseline,
+            r_pred
+        ]
+    return corr_df
+
+
+def correlation_mer(results_df): # using masks
+    ind_terre_mer = get_ind_terre_mer_500m()
+    corr_df = pd.DataFrame(
+        [],
+        columns=['dates', 'echeances', 'r_baseline', 'r_pred']
+    )
+    for i in range(len(results_df)):
+        y_test = np.ma.masked_array(results_df.y_test.iloc[i], ind_terre_mer)
+        y_pred = np.ma.masked_array(results_df.y_pred.iloc[i], ind_terre_mer)
+        baseline = np.ma.masked_array(results_df.baseline.iloc[i], ind_terre_mer)
+
+        r_baseline, _ = sc.pearsonr(
+            baseline.reshape(-1),
+            y_test.reshape(-1)
+        )
+        r_pred    , _ = sc.pearsonr(
+            y_pred.reshape(-1),
+            y_test.reshape(-1)
+        )
+        corr_df.loc[len(corr_df)] = [
+            results_df.dates.iloc[i],
+            results_df.echeances.iloc[i],
+            r_baseline,
+            r_pred
+        ]
+    return corr_df
+
+
 
 
 '''
@@ -351,14 +414,14 @@ def plot_results(results_df, param,  output_dir):
         plt.savefig(output_dir + 'results_' + str(i) + '_' + param + '.png', bbox_inches='tight')
 
 
-def plot_score_maps(results_df, metric, metric_name, output_dir):
+def plot_score_maps(results_df, metric, metric_name, output_dir, cmap='coolwarm'):
     for i in range(10):
         metric_df = datewise_scores(results_df, metric, metric_name)
         fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (25, 12))
         images = []
         data = [metric_df[metric_name + '_baseline_map'][i], metric_df[metric_name + '_y_pred_map'][i]]
         for j in range(len(data)):
-            im = axs[j].imshow(data[j], cmap='coolwarm')
+            im = axs[j].imshow(data[j], cmap=cmap)
             images.append(im)
             axs[j].label_outer()
         vmin = min(image.get_array().min() for image in images)
@@ -491,3 +554,46 @@ def plot_cor_len(results_df, output_dir):
     axs[2].set_title('y_test')
     fig.colorbar(images[0], ax=axs)
     plt.savefig(output_dir + 'correlation_length_maps.png', bbox_inches='tight')
+
+
+def plot_corr_distrib(results_df, output_dir):
+    corr_df                = correlation(results_df)
+    corr_df_pred           = corr_df['r_pred']
+    corr_df_baseline       = corr_df['r_baseline']
+    corr_df_terre          = correlation_terre(results_df)
+    corr_df_pred_terre     = corr_df_terre['r_pred']
+    corr_df_baseline_terre = corr_df_terre['r_baseline']
+    corr_df_mer            = correlation_mer(results_df)
+    corr_df_pred_mer       = corr_df_mer['r_pred']
+    corr_df_baseline_mer   = corr_df_mer['r_baseline']
+
+    D_baseline = np.zeros((len(corr_df), 3))
+    for i in range(len(corr_df_baseline)):
+        D_baseline[i, 0] = corr_df_baseline[i]
+        D_baseline[i, 1] = corr_df_baseline_terre[i]
+        D_baseline[i, 2] = corr_df_baseline_mer[i]
+
+    D_pred = np.zeros((len(corr_df), 3))
+    for i in range(len(corr_df_pred)):
+        D_pred[i, 0] = corr_df_pred[i]
+        D_pred[i, 1] = corr_df_pred_terre[i]
+        D_pred[i, 2] = corr_df_pred_mer[i]
+        
+    D = np.concatenate([D_baseline, D_pred], axis=1)
+    labels = ['global_baseline', 'terre_baseline', 'mer_baseline', 'global_pred', 'terre_pred', 'mer_pred']
+
+    fig, ax = plt.subplots(figsize=(10, 11))
+    plt.grid()
+    VP = ax.boxplot(D, positions=[3, 6, 9, 12, 15, 18], widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    ax.set_title('pearson correlation distribution')
+    ax.tick_params(axis='x', rotation=45)
+
+    plt.savefig(output_dir + 'distribution_corr.png')

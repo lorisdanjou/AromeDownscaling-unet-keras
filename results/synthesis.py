@@ -55,7 +55,7 @@ def synthesis_maps(expes_names, expes_results, output_dir, full=False):
             plt.savefig(output_dir + 'synthesis_' + str(k) + '_map.png', bbox_inches='tight')
 
 
-def synthesis_score_maps(expes_names, expes_results, output_dir, metric, metric_name):
+def synthesis_score_maps(expes_names, expes_results, output_dir, metric, metric_name, cmap='coolwarm'):
     for k in range(10):
         fig, axs = plt.subplots(nrows=1, ncols=len(expes_names)+1, figsize=(5*len(expes_names), 5))
         images = []
@@ -63,11 +63,11 @@ def synthesis_score_maps(expes_names, expes_results, output_dir, metric, metric_
             name = expes_names[j]
             results_df = expes_results[j]
             metric_df  = datewise_scores(results_df, metric, metric_name)
-            im = axs[j].imshow(metric_df[metric_name + '_y_pred_map'][k], cmap='coolwarm')
+            im = axs[j].imshow(metric_df[metric_name + '_y_pred_map'][k], cmap=cmap)
             images.append(im)
             axs[j].label_outer()
             axs[j].set_title(metric_name + ' y_pred ' + name)
-        im = axs[j+1].imshow(metric_df[metric_name + '_baseline_map'][k], cmap='coolwarm')
+        im = axs[j+1].imshow(metric_df[metric_name + '_baseline_map'][k], cmap=cmap)
         images.append(im)
         axs[j+1].label_outer()
         axs[j+1].set_title(metric_name + ' baseline ')
@@ -248,3 +248,65 @@ def synthesis_corr_len(expes_names, expes_results, output_dir):
         im.set_norm(norm)
     fig.colorbar(images[0], ax=axs)
     plt.savefig(output_dir + 'correlation_length_map.png', bbox_inches='tight')
+
+
+def synthesis_corr_distrib(expes_names, expes_results, output_dir):
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
+    D = []
+    D_terre = []
+    D_mer = []
+    labels = list(expes_names) + ['baseline']
+    for i in range(len(expes_names)):
+        results_df = expes_results[i]
+
+        corr_df                = correlation(results_df)
+        corr_df_baseline       = corr_df['r_baseline']
+        corr_df_pred           = corr_df['r_pred']
+        corr_df_terre          = correlation_terre(results_df)
+        corr_df_baseline_terre = corr_df_terre['r_baseline']
+        corr_df_pred_terre     = corr_df_terre['r_pred']
+        corr_df_mer            = correlation_mer(results_df)
+        corr_df_baseline_mer   = corr_df_mer['r_baseline']
+        corr_df_pred_mer       = corr_df_mer['r_pred']
+        
+        D.append(corr_df_pred)
+        D_terre.append(corr_df_pred_terre)
+        D_mer.append(corr_df_pred_mer)
+    D.append(corr_df_baseline)
+    D_terre.append(corr_df_baseline_terre)
+    D_mer.append(corr_df_baseline_mer)
+    axs[0].grid()
+    axs[1].grid()
+    axs[2].grid()
+    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    axs[0].set_title('pearson distribution')
+    axs[1].set_title('pearson terre distribution')
+    axs[2].set_title('pearson mer distribution')
+    # axs.tick_params(axis='x', rotation=90)
+    plt.savefig(output_dir + 'synthesis_distributions_corr.png', bbox_inches='tight')
