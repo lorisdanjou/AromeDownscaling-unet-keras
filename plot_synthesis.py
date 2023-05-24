@@ -14,24 +14,45 @@ baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/'
 
 
 # ========== Setup
-params = ['t2m']
-static_fields = []
-dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
-dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
-resample = 'r'
+dates_train = rangex([
+    '2020070100-2021053100-PT24H'
+])
+dates_valid = rangex([
+    '2021080100-2021083100-PT24H',
+    '2021100100-2021103100-PT24H',
+    '2021100100-2021123100-PT24H',
+    '2022020100-2022022800-PT24H',
+    '2022040100-2022043000-PT24H',
+    '2022060100-2022063000-PT24H'
+])
+dates_test = rangex([
+    '2021070100-2021073100-PT24H',
+    '2021090100-2021093000-PT24H',
+    '2021110100-2021113000-PT24H',
+    '2022030100-2022033100-PT24H',
+    '2022050100-2022053100-PT24H'
+])
 param = 'u10'
 echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/normalisations/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/first_expes/'
 
 
 # ========== Load results
-expes_names = ['basic', 'standardisation', 'min-max', 'mean']
+# expes_names = ['basic', 'standardisation', 'min-max', 'mean']
+# expes_results = [
+#     load_results(output_dir + 'basic_normalisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'standardisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'minmax/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+#     load_results(output_dir + 'mean/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
+# ]
+expes_names = ['uv10', 'SURFGEOPOTENTIEL', 'mae', 'linear', 'cubic']
+base_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/'
 expes_results = [
-    load_results(output_dir + 'basic_normalisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'standardisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'minmax/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(output_dir + 'mean/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
+    load_results(base_dir + 'base/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+    load_results(base_dir + 'params/SURFGEOPOTENTIEL/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+    load_results(base_dir + 'losses/mae/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
+    load_results(base_dir + 'interp/bl/', dates_test, echeances, 'bl', data_test_location, baseline_location, param=param),
+    load_results(base_dir + 'interp/bc/', dates_test, echeances, 'bc', data_test_location, baseline_location, param=param)
 ]
 # expes_names = ['0.2', '0.3', '0.4', '0.5', '0.55', '0.6']
 # expes_results = [
@@ -73,20 +94,20 @@ expes_results = [
 
 # ========== Graphs
 print('maps')
-# synthesis_maps(expes_names, expes_results, output_dir, full=True)
+synthesis_maps(expes_names, expes_results, output_dir, full=True)
 print('score maps')
-# synthesis_score_maps(expes_names, expes_results, output_dir, mse, 'mse')
-# synthesis_score_maps(expes_names, expes_results, output_dir, mae, 'mae')
-# synthesis_score_maps(expes_names, expes_results, output_dir, biais, 'biais')
-# synthesis_score_maps(expes_names, expes_results, output_dir, ssim, 'ssim', cmap='plasma')
+synthesis_score_maps(expes_names, expes_results, output_dir, mse, 'mse')
+synthesis_score_maps(expes_names, expes_results, output_dir, mae, 'mae')
+synthesis_score_maps(expes_names, expes_results, output_dir, biais, 'biais')
+synthesis_score_maps(expes_names, expes_results, output_dir, ssim, 'ssim', cmap='plasma')
 print('distributions')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, mse, 'mse')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, mae, 'mae')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, ssim, 'ssim')
+synthesis_score_distribs(expes_names, expes_results, output_dir, mse, 'mse')
+synthesis_score_distribs(expes_names, expes_results, output_dir, mae, 'mae')
+synthesis_score_distribs(expes_names, expes_results, output_dir, ssim, 'ssim')
 synthesis_corr_distrib(expes_names, expes_results, output_dir)
 print('wasserstein')
-# synthesis_wasserstein_distance_distrib(expes_names, expes_results, output_dir)
+synthesis_wasserstein_distance_distrib(expes_names, expes_results, output_dir)
 print('PSDs')
-# synthesis_PSDs(expes_names, expes_results, output_dir)
+synthesis_PSDs(expes_names, expes_results, output_dir)
 print('corr_len')
-# synthesis_corr_len(expes_names, expes_results, output_dir)
+synthesis_corr_len(expes_names, expes_results, output_dir)
