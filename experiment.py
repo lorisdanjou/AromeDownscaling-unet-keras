@@ -49,10 +49,10 @@ dates_test = rangex([
     '2022030100-2022033100-PT24H',
     '2022050100-2022053100-PT24H'
 ])
-resample = 'bc'
+resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/interp/bc/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/uresnet/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -142,9 +142,8 @@ print('preprocessing time = ' + str(t3-t2))
 
 
 # ========== Model definition
-unet = unet_maker_manu_r((None, None, len(params_in) + len(static_fields)), output_channels=len(params_out))
+unet = UResNet_maker((None, None, len(params_in) + len(static_fields)), output_channels=len(params_out))
 print('unet creation ok')
-      
 
 # ========== Training
 unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k])  
