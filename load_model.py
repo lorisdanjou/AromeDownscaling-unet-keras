@@ -148,7 +148,7 @@ t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
 
 # ========== Load Model
-unet = unet_maker_manu_r((None, None, len(params_in) + len(static_fields)), output_channels=len(params_out))
+unet = unet_maker((None, None, len(params_in) + len(static_fields)), output_channels=len(params_out))
 weights_location = output_dir
 unet.load_weights(weights_location + 'weights.41-0.25.hdf5', by_name=False)
 unet.summary()

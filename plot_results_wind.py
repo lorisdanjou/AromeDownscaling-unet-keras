@@ -23,7 +23,7 @@ dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/uresnet/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/resunet/'
 
 
 # ========== Load Data
