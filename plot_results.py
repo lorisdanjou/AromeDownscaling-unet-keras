@@ -23,7 +23,7 @@ dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24
 dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
 resample = 'r'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/old/params/t2m/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 
 # ========== Load Data
@@ -31,13 +31,13 @@ results_df = load_results(working_dir, dates_test, echeances, resample, data_tes
 
 
 # ========== Plots
-# plot_results(results_df, 't2m', working_dir)
-# plot_score_maps(results_df, mae, 'mae', working_dir)
+plot_results(results_df, 't2m', working_dir)
+plot_score_maps(results_df, mae, 'mae', working_dir)
 # plot_distrib(results_df_u, mse, 'mse', working_dir)
-# plot_distrib(results_df, mae, 'mae', working_dir)
+plot_distrib(results_df, mae, 'mae', working_dir)
+# plot_distrib(results_df, ssim, 'ssim', working_dir)
 # plot_datewise_wasserstein_distance_distrib(results_df, working_dir)
 # plot_cor_len(results_df_u, working_dir)
-plot_ssim_distrib(results_df, working_dir)
 
 
 # ========== Print mean scores

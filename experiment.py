@@ -52,7 +52,7 @@ dates_test = rangex([
 resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/resunet/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -135,18 +135,18 @@ X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisatio
 
 train_generator = DataGenerator(X_train_df, y_train_df, batch_size)
 valid_generator = DataGenerator(X_valid_df, y_valid_df, batch_size)
-X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
+X_test , y_test = df_to_array(X_test_df) , df_to_array(y_test_df)
 
 t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
 
 
 # ========== Model definition
-unet = ResUNet_maker((None, None, len(params_in) + len(static_fields)), output_channels=len(params_out))
+unet = ResUNet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
 print('unet creation ok')
 
 # ========== Training
-unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k])  
+unet.compile(optimizer=Adam(learning_rate=LR), loss=modified_mse(0.5, 5), metrics=[rmse_k], run_eagerly=True)  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations

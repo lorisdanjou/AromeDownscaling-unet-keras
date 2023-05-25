@@ -2,6 +2,7 @@ import numpy as np
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
 from training.imports4training import *
+from training.generator import DataGenerator
 from unet.architectures import *
 import matplotlib.pyplot as plt
 from preprocessing.load_data import *
@@ -116,8 +117,10 @@ X_valid_df, y_valid_df = standardisation(X_valid_df, output_dir), standardisatio
 X_test_df , y_test_df  = standardisation(X_test_df, output_dir) , standardisation(y_test_df, output_dir)
 
 
-X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
-X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
+# X_train, y_train = df_to_array(X_train_df), df_to_array(y_train_df)
+# X_valid, y_valid = df_to_array(X_valid_df), df_to_array(y_valid_df)
+train_generator = DataGenerator(X_train_df, y_train_df, batch_size)
+valid_generator = DataGenerator(X_valid_df, y_valid_df, batch_size)
 X_test , y_test  = df_to_array(X_test_df) , df_to_array(y_test_df)
 
 t3 = perf_counter()
@@ -125,7 +128,8 @@ print('preprocessing time = ' + str(t3-t2))
 
 
 # ========== Model definition
-unet = unet_maker_manu_r(X_train[0, :, :, :].shape)
+# unet = unet_maker(X_train[0, :, :, :].shape)
+unet = unet_maker((None, None, len(params_in) + len(static_fields)))
 print('unet creation ok')
       
 
@@ -136,9 +140,14 @@ callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbo
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
              ModelCheckpoint(output_dir + model_name, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
 
-history = unet.fit(X_train, y_train, 
+# history = unet.fit(X_train, y_train, 
+#          batch_size=batch_size, epochs=epochs,  
+#          validation_data=(X_valid, y_valid), 
+#          callbacks = callbacks,
+#          verbose=2, shuffle=True)
+history = unet.fit(train_generator, 
          batch_size=batch_size, epochs=epochs,  
-         validation_data=(X_valid, y_valid), 
+         validation_data=valid_generator, 
          callbacks = callbacks,
          verbose=2, shuffle=True)
 
