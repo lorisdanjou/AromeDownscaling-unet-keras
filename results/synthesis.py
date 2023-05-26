@@ -81,6 +81,31 @@ def synthesis_score_maps(expes_names, expes_results, output_dir, metric, metric_
         plt.savefig(output_dir + metric_name + '_' + str(k) + '_map.png', bbox_inches='tight')
 
 
+def synthesis_unique_score_map(expes_names, expes_results, output_dir, metric, metric_name, cmap='coolwarm'):
+    fig, axs = plt.subplots(nrows=1, ncols=len(expes_names)+1, figsize=(5*len(expes_names), 5))
+    images = []
+    for j in range(len(expes_names)):
+        name = expes_names[j]
+        results_df = expes_results[j]
+        metric_df  = datewise_scores(results_df, metric, metric_name)
+        im = axs[j].imshow(metric_df[metric_name + '_y_pred_map'].mean(), cmap=cmap)
+        images.append(im)
+        axs[j].label_outer()
+        axs[j].set_title(metric_name + ' y_pred ' + name)
+    im = axs[j+1].imshow(metric_df[metric_name + '_baseline_map'].mean(), cmap=cmap)
+    images.append(im)
+    axs[j+1].label_outer()
+    axs[j+1].set_title(metric_name + ' baseline ')
+
+    vmin = min(image.get_array().min() for image in images)
+    vmax = max(image.get_array().max() for image in images)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    for im in images:
+        im.set_norm(norm)
+    fig.colorbar(images[0], ax=axs)
+    plt.savefig(output_dir + metric_name + '_' + '_map.png', bbox_inches='tight')
+
+
 def synthesis_score_distribs(expes_names, expes_results, output_dir, metric, metric_name):
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
