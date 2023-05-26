@@ -9,7 +9,6 @@ from preprocessing.load_data import *
 from preprocessing.normalisations import *
 from time import perf_counter
 # import warnings
-
 # warnings.filterwarnings("ignore")
 
 physical_devices = tf.config.list_physical_devices()
@@ -142,7 +141,7 @@ print('preprocessing time = ' + str(t3-t2))
 
 
 # ========== Model definition
-unet = ResUNet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
+unet = unet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
 print('unet creation ok')
 
 # ========== Training

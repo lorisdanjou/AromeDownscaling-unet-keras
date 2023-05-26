@@ -27,7 +27,7 @@ working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 
 # ========== Load Data
-results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m')
+results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='u10')
 
 
 # ========== Plots
