@@ -65,6 +65,8 @@ def load_results(working_dir, dates_test, echeances, resample, data_test_locatio
         #     else:
         #         filepath_X_test = data_test_location + 'oper_r_' + d.isoformat() + 'Z_' + param + '.npy'
             X_test = np.load(filepath_X_test)
+            if resample in ['bl', 'bc']:
+                X_test = np.pad(X_test, ((5,4), (2,5), (0,0)), mode='edge')
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
             X_test = None
@@ -435,6 +437,28 @@ def plot_score_maps(results_df, metric, metric_name, output_dir, cmap='coolwarm'
         plt.savefig(output_dir + metric_name + str(i) + '_map.png')
 
 
+def plot_unique_score_map(results_df, metric, metric_name, output_dir, cmap='coolwarm'):
+    metric_df = datewise_scores(results_df, metric, metric_name)
+    metric_baseline = metric_df[metric_name + '_baseline_map'].mean()
+    metric_y_pred   = metric_df[metric_name + '_baseline_map'].mean()
+    fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (25, 12))
+    images = []
+    data = [metric_baseline, metric_y_pred]
+    for j in range(len(data)):
+        im = axs[j].imshow(data[j], cmap=cmap)
+        images.append(im)
+        axs[j].label_outer()
+    vmin = min(image.get_array().min() for image in images)
+    vmax = max(image.get_array().max() for image in images)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    for im in images:
+        im.set_norm(norm)
+    axs[0].set_title('baseline ' + metric_name  + ' ' + str(metric_baseline.mean()))
+    axs[1].set_title('pred ' + metric_name  + ' ' + str(metric_y_pred.mean()))
+    fig.colorbar(images[0], ax=axs)
+    plt.savefig(output_dir + metric_name + '_unique_map.png')
+
+
 def plot_distrib(results_df, metric, metric_name, output_dir):
     score_baseline = datewise_scores(results_df, metric, metric_name)[metric_name + '_baseline_mean']
     score_baseline_terre = datewise_scores_terre(results_df, metric, metric_name)[metric_name + '_baseline_mean']
@@ -525,14 +549,14 @@ def plot_PSDs(results_df, output_dir):
 
     fig, ax = plt.subplots()
     ax.grid()
-    ax.plot(psd.psd_test, color='r', label='psd_test')
-    ax.plot(psd.psd_pred, color='b', label='psd_pred')
-    ax.plot(psd.psd_baseline, color='g', label='psd_baseline')
+    ax.plot(psd_df.psd_test, color='r', label='psd_test')
+    ax.plot(psd_df.psd_pred, color='b', label='psd_pred')
+    ax.plot(psd_df.psd_baseline, color='g', label='psd_baseline')
     ax.loglog()
     ax.legend()
     ax.set_title('PSDs')
 
-    fig.savefig(output_dir + '_PSDs.png')
+    fig.savefig(output_dir + 'PSDs.png')
 
 
 def plot_cor_len(results_df, output_dir):

@@ -91,11 +91,11 @@ def synthesis_unique_score_map(expes_names, expes_results, output_dir, metric, m
         im = axs[j].imshow(metric_df[metric_name + '_y_pred_map'].mean(), cmap=cmap)
         images.append(im)
         axs[j].label_outer()
-        axs[j].set_title(metric_name + ' y_pred ' + name)
+        axs[j].set_title(metric_name + ' y_pred ' + name + ' ' + str(metric_df[metric_name + '_y_pred_map'].mean().mean()))
     im = axs[j+1].imshow(metric_df[metric_name + '_baseline_map'].mean(), cmap=cmap)
     images.append(im)
     axs[j+1].label_outer()
-    axs[j+1].set_title(metric_name + ' baseline ')
+    axs[j+1].set_title(metric_name + ' baseline ' + ' ' + str(metric_df[metric_name + '_baseline_map'].mean().mean()))
 
     vmin = min(image.get_array().min() for image in images)
     vmax = max(image.get_array().max() for image in images)

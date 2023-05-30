@@ -12,8 +12,7 @@ def mse_k(y_true, y_pred):
     return keras.backend.mean(keras.backend.square(y_pred - y_true), axis=-1)
 
 
-def mse_terre_mer_k(y_true, y_pred): # fonctionne pour des inputs complets adaptés à la grille de sortie (interpolation nearest, bl ou bc)
-    frac = 0.5
+def mse_terre_mer_k(y_true, y_pred, frac=0.5): # fonctionne pour des inputs complets adaptés à la grille de sortie (interpolation nearest, bl ou bc)
     shape = y_true.get_shape()[1:4]
     ind_terre_mer = np.load('/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy', allow_pickle=True)
     ind_terre_mer = np.pad(ind_terre_mer, ((5,5), (2,3)), mode='reflect')
@@ -27,6 +26,9 @@ def mse_terre_mer_k(y_true, y_pred): # fonctionne pour des inputs complets adapt
     y_pred_mer   = y_pred * (1 - ind_terre_mer_tf)
 
     return frac * mse_k(y_true_terre, y_pred_terre) + (1 - frac) * mse_k(y_true_mer, y_pred_mer)
+
+def mse_terre_mer(frac=0.5):
+    return lambda y_true, y_pred : mse_terre_mer_k(y_true, y_pred, frac=frac)
 
 
 # ========== new MSE : 
