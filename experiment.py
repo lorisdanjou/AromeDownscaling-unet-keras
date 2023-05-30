@@ -28,7 +28,7 @@ model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params_in = ['u10', 'v10']
 params_out = ['u10', 'v10']
-static_fields = ['SURFGEOPOTENTIEL']
+static_fields = []
 
 dates_train = rangex([
     '2020070100-2021053100-PT24H'
@@ -51,7 +51,7 @@ dates_test = rangex([
 resample = 'r'
 echeances = range(6, 37, 3)
 LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/terre-SURFGEOPOTENTIEL/'
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/0.6-4/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -145,7 +145,7 @@ unet = unet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
 print('unet creation ok')
 
 # ========== Training
-unet.compile(optimizer=Adam(learning_rate=LR), loss=mse_terre_mer(1.0), metrics=[rmse_k], run_eagerly=True)  
+unet.compile(optimizer=Adam(learning_rate=LR), loss=modified_mse(0.5, 4), metrics=[rmse_k], run_eagerly=True)  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
              EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations

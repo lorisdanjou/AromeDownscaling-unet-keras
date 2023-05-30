@@ -62,8 +62,7 @@ def mse_terre_mer(frac=0.5):
 
 def modified_mse_k(y_true, y_pred, tau, eps):
     # beta coefficients: 
-    # b = (eps + y_true[i, :, :, :])/(eps + y_pred[i, :, :, :])
-    b = 1
+    b = (eps + y_true)/(eps + y_pred)
     weighted_mse = tf.math.reduce_sum(((y_pred - b * y_true)**2), axis=3)
     # pinball function (tau) : 
     norm_true = tf.math.reduce_sum(y_true**2, axis=3)
