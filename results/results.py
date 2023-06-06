@@ -453,8 +453,10 @@ def plot_unique_score_map(results_df, metric, metric_name, output_dir, cmap='coo
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
     for im in images:
         im.set_norm(norm)
-    axs[0].set_title('baseline ' + metric_name  + ' ' + str(metric_baseline.mean()))
-    axs[1].set_title('pred ' + metric_name  + ' ' + str(metric_y_pred.mean()))
+    mean = metric_baseline.mean()
+    axs[0].set_title('baseline ' + metric_name  + ' ' + f'{mean:.2f}')
+    mean = metric_y_pred.mean()
+    axs[1].set_title('pred ' + metric_name  + ' ' + f'{mean:.2f}')
     fig.colorbar(images[0], ax=axs)
     plt.savefig(output_dir + metric_name + '_unique_map.png')
 

@@ -1,6 +1,7 @@
 import numpy as np 
 import random as rn
 from bronx.stdtypes.date import daterangex as rangex
+from sklearn.model_selection import train_test_split
 from unet.architectures import *
 from training.imports4training import *
 from training.generator import DataGenerator
@@ -50,8 +51,8 @@ dates_test = rangex([
 ])
 resample = 'r'
 echeances = range(6, 37, 3)
-LR, batch_size, epochs = 0.005, 32, 100
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m//'
+LR, batch_size, epochs = 0.005, 128, 100
+output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/'
 
 t1 = perf_counter()
 print('setup time = ' + str(t1-t0))
@@ -68,21 +69,11 @@ X_train_df = load_X(
     resample=resample
 )
 
-X_valid_df = load_X(
+X_test_df = load_X(
     dates_valid, 
     echeances,
     params_in,
     data_valid_location,
-    data_static_location,
-    static_fields = static_fields,
-    resample=resample
-)
-
-X_test_df = load_X(
-    dates_test, 
-    echeances,
-    params_in,
-    data_test_location,
     data_static_location,
     static_fields = static_fields,
     resample=resample
@@ -95,25 +86,20 @@ y_train_df = load_y(
     data_train_location
 )
 
-y_valid_df = load_y(
+y_test_df = load_y(
     dates_valid,
     echeances,
     params_out,
     data_valid_location
 )
-
-y_test_df = load_y(
-    dates_test,
-    echeances,
-    params_out,
-    data_test_location
-)
-
 t2 = perf_counter()
 print('loading time = ' + str(t2-t1))
 
 
 # ========== Preprocessing
+# split train set
+X_train_df, X_valid_df, y_train_df, y_valid_df = train_test_split(X_train_df, y_train_df, test_size=int(0.2*len(X_train_df)))
+
 # remove missing days
 X_train_df, y_train_df = delete_missing_days(X_train_df, y_train_df)
 X_valid_df, y_valid_df = delete_missing_days(X_valid_df, y_valid_df)
@@ -145,17 +131,17 @@ unet = unet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
 print('unet creation ok')
 
 # ========== Training
-unet.compile(optimizer=Adam(learning_rate=LR), loss=mse_terre_mer(1.0), metrics=[rmse_k], run_eagerly=True)  
+unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k], run_eagerly=True)  
 print('compilation ok')
 callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
-             EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
-             ModelCheckpoint(output_dir + model_name, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
+            EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
+            ModelCheckpoint(output_dir + model_name, monitor='val_loss', verbose=1, save_best_only=True)] ## Save only the best model
 
 history = unet.fit(train_generator, 
-         batch_size=batch_size, epochs=epochs,  
-         validation_data=valid_generator, 
-         callbacks = callbacks,
-         verbose=2, shuffle=True)
+        batch_size=batch_size, epochs=epochs,  
+        validation_data=valid_generator, 
+        callbacks = callbacks,
+        verbose=2, shuffle=True)
 
 unet.summary()
 print(history.history.keys())
@@ -192,16 +178,3 @@ print(y_pred.shape)
 
 t5 = perf_counter()
 print('predicting time = ' + str(t5-t4))
-
-
-# ========== Postprocessing
-y_pred_df = y_test_df.copy()
-arrays_cols = get_arrays_cols(y_pred_df)
-for i in range(len(y_pred_df)):
-    for i_c, c in enumerate(arrays_cols):
-        y_pred_df[c][i] = y_pred[i, :, :, i_c]
-
-y_pred_df = destandardisation(y_pred_df, output_dir)
-y_pred_df = crop(y_pred_df)
-
-y_pred_df.to_pickle(output_dir + 'y_pred.csv')

@@ -18,27 +18,45 @@ baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/'
 # params = ["t2m", "rr", "rh2m", "tpw850", "ffu", "ffv", "tcwv", "sp", "cape", "hpbl", "ts", "toa","tke","u700","v700","u500","v500", "u10", "v10"]
 params = ['t2m']
 static_fields = []
-dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
-dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
-dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
+# dates_train = rangex(['2020070100-2021053100-PT24H']) # à modifier
+# dates_valid = rangex(['2022020100-2022022800-PT24H', '2022040100-2022043000-PT24H', '2022060100-2022063000-PT24H']) # à modifier
+# dates_test = rangex(['2022030100-2022033100-PT24H', '2022050100-2022053100-PT24H']) # à modifier
+dates_train = rangex([
+    '2020070100-2021053100-PT24H'
+])
+dates_valid = rangex([
+    '2021080100-2021083100-PT24H',
+    '2021100100-2021103100-PT24H',
+    '2021100100-2021123100-PT24H',
+    '2022020100-2022022800-PT24H',
+    '2022040100-2022043000-PT24H',
+    '2022060100-2022063000-PT24H'
+])
+dates_test = rangex([
+    '2021070100-2021073100-PT24H',
+    '2021090100-2021093000-PT24H',
+    '2021110100-2021113000-PT24H',
+    '2022030100-2022033100-PT24H',
+    '2022050100-2022053100-PT24H'
+])
 resample = 'r'
 echeances = range(6, 37, 3)
-working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/old/params/t2m/'
+working_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/0.6-4/'
 
 
 # ========== Load Data
-results_df = load_results(working_dir, dates_test, echeances, resample, data_test_location, baseline_location, param='t2m')
+results_df = load_results(working_dir, dates_valid, echeances, resample, data_test_location, baseline_location, param='t2m')
 
 
 # ========== Plots
-# plot_results(results_df, 't2m', working_dir)
+plot_results(results_df, 't2m', working_dir)
 # plot_score_maps(results_df, mae, 'mae', working_dir)
 # plot_distrib(results_df_u, mse, 'mse', working_dir)
 # plot_distrib(results_df, mae, 'mae', working_dir)
 # plot_distrib(results_df, ssim, 'ssim', working_dir)
 # plot_datewise_wasserstein_distance_distrib(results_df, working_dir)
 # plot_PSDs(results_df, working_dir)
-plot_unique_score_map(results_df, mse, 'mse', working_dir)
+# plot_unique_score_map(results_df, mse, 'mse', working_dir)
 # plot_cor_len(results_df_u, working_dir)
 
 

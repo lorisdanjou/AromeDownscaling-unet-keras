@@ -25,7 +25,7 @@ data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
 baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/'
 model_name = 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
-def experiment(params_in, params_out, static_fields, output_dir, resample='r', LR=0.005, batch_size=32, epochs=100):
+def experiment(params_in, params_out, static_fields, output_dir, resample='r', LR=0.005, batch_size=32, epochs=100, tau=0.5, eps=5):
     # ========== Setup
     dates_train = rangex([
         '2020070100-2021053100-PT24H'
@@ -124,7 +124,7 @@ def experiment(params_in, params_out, static_fields, output_dir, resample='r', L
     print('unet creation ok')
 
     # ========== Training
-    unet.compile(optimizer=Adam(learning_rate=LR), loss='mse', metrics=[rmse_k], run_eagerly=True)  
+    unet.compile(optimizer=Adam(learning_rate=LR), loss=modified_mse(tau, eps), metrics=[rmse_k], run_eagerly=True)  
     print('compilation ok')
     callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1), ## we set some callbacks to reduce the learning rate during the training
                 EarlyStopping(monitor='val_loss', patience=15, verbose=1),               ## Stops the fitting if val_loss does not improve after 15 iterations
@@ -185,145 +185,190 @@ def experiment(params_in, params_out, static_fields, output_dir, resample='r', L
 
     y_pred_df.to_pickle(output_dir + 'y_pred.csv')
 
+base_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/'
 
-base_output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/'
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-1/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=1
+# )
 
-params_in = ['t2m']
-params_out = ['t2m']
-static_fields = []
+# tf.keras.backend.clear_session()
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-2/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=2
+# )
+
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-3/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=3
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-4/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=4
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-5/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=5
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-8/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=8
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-10/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=10
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-15/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=15
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-20/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=20
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-17/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=17
+# )
+
+# experiment(
+#     params_in=['u10', 'v10'],
+#     params_out=['u10', 'v10'],
+#     static_fields=[],
+#     output_dir= base_dir + '0.6-16/',
+#     resample = 'r',
+#     LR=0.005,
+#     batch_size=32,
+#     epochs=100,
+#     tau=0.6,
+#     eps=16
+# )
+
 experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 't2m/',
-    resample='r',
+    params_in=['u10', 'v10'],
+    params_out=['u10', 'v10'],
+    static_fields=[],
+    output_dir= base_dir + '0.6-13/',
+    resample = 'r',
     LR=0.005,
     batch_size=32,
-    epochs=100
+    epochs=100,
+    tau=0.6,
+    eps=13
 )
 
-params_in = ['t2m', 'cape']
-params_out = ['t2m']
-static_fields = []
 experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'cape/',
-    resample='r',
+    params_in=['u10', 'v10'],
+    params_out=['u10', 'v10'],
+    static_fields=[],
+    output_dir= base_dir + '0.6-18/',
+    resample = 'r',
     LR=0.005,
     batch_size=32,
-    epochs=100
+    epochs=100,
+    tau=0.6,
+    eps=18
 )
 
-params_in = ['t2m', 'tke']
-params_out = ['t2m']
-static_fields = []
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'tke/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
 
-params_in = ['t2m', 'toa']
-params_out = ['t2m']
-static_fields = []
 experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'toa/',
-    resample='r',
+    params_in=['u10', 'v10'],
+    params_out=['u10', 'v10'],
+    static_fields=[],
+    output_dir= base_dir + '0.6-19/',
+    resample = 'r',
     LR=0.005,
     batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m', 'ts']
-params_out = ['t2m']
-static_fields = []
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'ts/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m', 'u10', 'v10']
-params_out = ['t2m']
-static_fields = []
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'uv10/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m']
-params_out = ['t2m']
-static_fields = ['SURFGEOPOTENTIEL']
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'SURFGEOPOTENTIEL/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m']
-params_out = ['t2m']
-static_fields = ['SURFIND.TERREMER']
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'SURFIND.TERREMER/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m']
-params_out = ['t2m']
-static_fields = ['SFX.BATHY']
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'SFX.BATHY/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
-)
-
-params_in = ['t2m','cape', 'tke', 'toa', 'ts', 'u10', 'v10']
-params_out = ['t2m']
-static_fields = ['SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
-experiment(
-    params_in,
-    params_out,
-    static_fields,
-    base_output_dir + 'all_params/',
-    resample='r',
-    LR=0.005,
-    batch_size=32,
-    epochs=100
+    epochs=100,
+    tau=0.6,
+    eps=19
 )
