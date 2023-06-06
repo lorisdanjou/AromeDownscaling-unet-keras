@@ -1,8 +1,11 @@
-import numpy as np 
-import random as rn
+import argparse
 from bronx.stdtypes.date import daterangex as rangex
-from unet.architectures import *
-from training.imports4training import *
+from sklearn.model_selection import train_test_split
+from unet.architectures import unet_maker
+import tensorflow as tf
+from keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
+from keras.optimizer_v2.adam import Adam
+from training.losses import mse_terre_mer, modified_mse, rmse_k
 from training.generator import DataGenerator
 import matplotlib.pyplot as plt
 from preprocessing.load_data import *
@@ -148,7 +151,7 @@ t3 = perf_counter()
 print('preprocessing time = ' + str(t3-t2))
 
 # ========== Load Model
-unet = ResUNet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
+unet = unet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
 weights_location = output_dir
 unet.load_weights(weights_location + 'weights.14-0.17.hdf5', by_name=False)
 unet.summary()
