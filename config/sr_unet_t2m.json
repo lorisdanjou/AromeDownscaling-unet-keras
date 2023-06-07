@@ -1,5 +1,4 @@
 {
-    "config": "optimisation", // "optimisation" or "test" 
     "dataset": {
         // these hyperparameters should not be changed : 
         "data_train_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_train/",
@@ -30,7 +29,8 @@
         "interp": "r",
         "params_in": ["t2m"],
         "params_out": ["t2m"],
-        "static_fields": [] 
+        "static_fields": [],
+        "config": "optimisation" // "optimisation" or "test" 
     },
     "training": {
         "loss": "mse", // "mse", "custom" ou "hybrid"
@@ -41,7 +41,15 @@
         "learning_rate": 0.005,
         "n_epochs": 1,
         "normalisation": "standardisation", //"standardisation", "normalisation", "minmax" or "mean"
-        "run_eagerly": false //true when loss == "custom"
+        "run_eagerly": false, //true when loss == "custom"
+        "patches": "random",   //"random" or "patchify"
+        "patch_size": 128,
+        "n_patches": 6
+    },
+    "inference": {
+        "weights": "", //path to weights
+        "patches": ""  //"random" or "patchify"
+
     },
     "output_dir": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/" //with a "/" at the end
 }

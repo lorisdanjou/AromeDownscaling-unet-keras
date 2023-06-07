@@ -186,7 +186,7 @@ def crop_for_patchify(df):
             df_out[c][i] = df_out[c][i][21:-21, 27:-26]
     return df_out
 
-def n_patches(img_h, img_w, patch_size):
+def get_n_patches(img_h, img_w, patch_size):
     img = np.zeros((img_h, img_w))
     step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
     patches = patchify(img,  (patch_size, patch_size), step=step)

@@ -1,6 +1,9 @@
 import argparse
 from bronx.stdtypes.date import daterangex as rangex
 from sklearn.model_selection import train_test_split
+from preprocessing.load_data import *
+from preprocessing.normalisations import *
+from preprocessing.patches import *
 from unet.architectures import unet_maker
 import tensorflow as tf
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
@@ -8,8 +11,6 @@ from keras.optimizer_v2.adam import Adam
 from training.losses import mse_terre_mer, modified_mse, rmse_k
 from training.generator import DataGenerator
 import matplotlib.pyplot as plt
-from preprocessing.load_data import *
-from preprocessing.normalisations import *
 from time import perf_counter
 
 import json
@@ -51,7 +52,7 @@ if __name__ == "__main__":
 
 
     # ========== Load data
-    if opt["config"] == "optimisation": # the test dataset is not used
+    if opt["dataset"]["config"] == "optimisation": # the test dataset is not used
         X_train_df = load_X(
             dates_train, 
             echeances,
@@ -89,7 +90,7 @@ if __name__ == "__main__":
         X_train_df, X_valid_df, y_train_df, y_valid_df = train_test_split(
             X_train_df, y_train_df, test_size=int(0.2*len(X_train_df)))
 
-    elif opt["config"] =="test": # the whole dataset is used
+    elif opt["dataset"]["config"] =="test": # the whole dataset is used
         X_train_df = load_X(
             dates_train, 
             echeances,
@@ -155,9 +156,20 @@ if __name__ == "__main__":
     X_test_df , y_test_df  = delete_missing_days(X_test_df, y_test_df)
 
     # pad data
-    X_train_df, y_train_df = pad(X_train_df), pad(y_train_df)
-    X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
-    X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
+    if opt["training"]["patches"] is not None:
+        if opt["training"]["patches"] == "random":
+            X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
+            X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
+        elif opt["training"]["patches"] == "patchify":
+            pX_train_df, y_train_df = pad_for_patchify(X_train_df), pad_for_patchify(y_train_df)
+            X_valid_df, y_valid_df = pad_for_patchify(X_valid_df), pad_for_patchify(y_valid_df)
+            X_test_df, y_test_df = pad_for_patchify(X_test_df), pad_for_patchify(y_test_df)
+        # else:
+        #     raise NotImplementedError
+    else:
+        X_train_df, y_train_df = pad(X_train_df), pad(y_train_df)
+        X_valid_df, y_valid_df = pad(X_valid_df), pad(y_valid_df)
+        X_test_df , y_test_df  = pad(X_test_df),  pad(y_test_df)
 
     # Normalisation:
     if opt["training"]["normalisation"] == "standardisation":
@@ -187,7 +199,24 @@ if __name__ == "__main__":
     else:
         raise NotImplementedError
 
+    # patches
+    if opt["training"]["patches"] is not None:
+        patch_size = opt["training"]["patch_size"]
+        if opt["training"]["patches"] == "random":
+            n_patches  = opt["training"]["n_patches"]
+            X_train_df, y_train_df = extract_patches(X_train_df, y_train_df, patch_size, patch_size, n_patches)
+        elif opt["training"]["patches"] == "patchify":
+            img_h = X_train_df.t2m[0].shape[0]
+            img_w = X_train_df.t2m[0].shape[1]
 
+            X_train_df, y_train_df = extract_patches_patchify(X_train_df, patch_size), extract_patches_patchify(y_train_df, patch_size)
+            X_valid_df, y_valid_df = extract_patches_patchify(X_valid_df, patch_size), extract_patches_patchify(y_valid_df, patch_size)
+            X_test_df, y_test_df = extract_patches_patchify(X_test_df, patch_size), extract_patches_patchify(y_test_df, patch_size)
+        else:
+            raise NotImplementedError
+
+
+    # generators
     train_generator = DataGenerator(X_train_df, y_train_df, batch_size)
     valid_generator = DataGenerator(X_valid_df, y_valid_df, batch_size)
     X_test , y_test = df_to_array(X_test_df) , df_to_array(y_test_df)
@@ -196,7 +225,7 @@ if __name__ == "__main__":
     print('preprocessing time = ' + str(t3-t2))
 
     # ========== Model definition
-    unet = unet_maker(X_test[0, :, :, :].shape, output_channels=len(params_out))
+    unet = unet_maker((None, None, None), output_channels=len(params_out))
     print('unet creation ok')
 
     # ========== Training
@@ -265,6 +294,11 @@ if __name__ == "__main__":
     for i in range(len(y_pred_df)):
         for i_c, c in enumerate(arrays_cols):
             y_pred_df[c][i] = y_pred[i, :, :, i_c]
+
+    if opt["inference"]["patches"] is not None:
+        if opt["inference"]["patches"] == "patchify":
+            y_pred_df = rebuild_from_patchify(y_pred_df, img_h, img_w)
+            y_pred_df = crop_for_patchify(y_pred_df)
 
     if opt["training"]["normalisation"] == "standardisation":
         y_pred_df = destandardisation(y_pred_df, output_dir)
