@@ -6,7 +6,7 @@ from unet.architectures import *
 from training.imports4training import *
 from training.generator import DataGenerator
 import matplotlib.pyplot as plt
-from preprocessing.load_data import *
+from data.load_data import *
 from preprocessing.normalisations import *
 from time import perf_counter
 # import warnings

@@ -1,5 +1,6 @@
 {
-    "dataset": {
+    "working_dir": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/",
+    "data": {
         // these hyperparameters should not be changed : 
         "data_train_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_train/",
         "data_valid_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_test/",
@@ -30,7 +31,28 @@
         "params_in": ["t2m"],
         "params_out": ["t2m"],
         "static_fields": [],
-        "config": "optimisation" // "optimisation" or "test" 
+        "config": "optimisation" // "optimisation" or "test"
+    },
+    "preprocessing": {
+        "normalisation": "standardisation",
+        "patches": {
+            "enable": false,
+            "train_method": "random", //null, "random" or "patchify" //useless if "enable": false
+            "test_method": "patchify", //idem
+            // for "random"
+            "patch_h": 128,
+            "patch_w": 128,
+            "n_patches": 5,
+            // for "patchify"
+            "patch_size": 128
+        },
+        "data_augmentation": {
+            "enable_flip": false,
+            "frac_flip": 0.3,
+            "enable_rot": false,
+            "frac_rot": 0.1
+        }
+        
     },
     "training": {
         "loss": "mse", // "mse", "custom" ou "hybrid"
@@ -39,17 +61,11 @@
         "eps": 15,   //for custom loss
         "batch_size": 32,
         "learning_rate": 0.005,
-        "n_epochs": 100,
-        "normalisation": "standardisation", //"standardisation", "normalisation", "minmax" or "mean"
-        "run_eagerly": false, //true when loss == "custom"
-        "patches": null,   //null, "random" or "patchify"
-        "patch_size": 128,
-        "n_patches": 6
+        "n_epochs": 1,
+        "run_eagerly": false //true when loss == "custom"
     },
     "inference": {
         "weights": null, //path to weights
         "patches": null  //null or "patchify"
-
-    },
-    "output_dir": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/" //with a "/" at the end
+    }
 }

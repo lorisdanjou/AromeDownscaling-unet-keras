@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.random import randint
 import pandas as pd
-from preprocessing.load_data import get_arrays_cols
+from data.load_data import get_arrays_cols
 
 
 def random_flip(X_df, y_df, frac=0.1):

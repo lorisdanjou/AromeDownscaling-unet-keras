@@ -1,6 +1,6 @@
 import numpy as np
 from tensorflow.keras.utils import Sequence
-from preprocessing.load_data import *
+from data.load_data import *
 
 
 class DataGenerator(Sequence):

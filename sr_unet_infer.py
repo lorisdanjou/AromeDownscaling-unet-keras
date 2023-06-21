@@ -1,7 +1,7 @@
 import argparse
 from bronx.stdtypes.date import daterangex as rangex
 from sklearn.model_selection import train_test_split
-from preprocessing.load_data import *
+from data.load_data import *
 from preprocessing.normalisations import *
 from preprocessing.patches import *
 from unet.architectures import unet_maker
