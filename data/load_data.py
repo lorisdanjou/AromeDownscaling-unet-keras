@@ -24,20 +24,21 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
     Inputs:
     Outputs : pansdas dataframe
     """
-    if resample in ['bl', 'bc']:
-        domain_shape = [205, 260]
-    elif resample =='r':
+    if resample in ["r", "bl", "bc"]:
         domain_shape = get_shape_500m()
-    else:
+    elif resample == "c":
         domain_shape = get_shape_2km5()
+    else:
+        raise NotImplementedError
+
     data = pd.DataFrame(
         [], 
         columns = ['dates', 'echeances'] + params
     )
     for i_d, d in enumerate(dates):
-        # chargement des données
         X_d = np.zeros([len(echeances), domain_shape[0], domain_shape[1], len(params) + len(static_fields)], dtype=np.float32)
         try:
+            # load dynamic predictors
             for i_p, p in enumerate(params):
                 if resample == 'c':
                     filepath_X = data_location + 'oper_c_' + d.isoformat() + 'Z_' + p + '.npy'
@@ -47,14 +48,13 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
                     X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
                 elif resample == 'bl':
                     filepath_X = data_location + 'oper_bl_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
+                    X_p = np.load(filepath_X).transpose([2, 0, 1])
+                    X_d[:, :, :, i_p] = np.pad(X_p, ((5,4), (2,5), (0,0)), mode='edge')
                 elif resample == 'bc':
                     filepath_X = data_location + 'oper_bc_' + d.isoformat() + 'Z_' + p + '.npy'
-                    X_d[:, :, :, i_p] = np.load(filepath_X).transpose([2, 0, 1])
-                else:
-                    raise ValueError("resample mal défini")
-        # champs statiques
-        # ! erreur chargement bc bl des champs statiques à corriger
+                    X_p = np.load(filepath_X).transpose([2, 0, 1])
+                    X_d[:, :, :, i_p] = np.pad(X_p, ((0,0), (5,4), (2,5)), mode='edge')
+            # load static fields
             for i_s, s in enumerate(static_fields):
                 if resample in ['r', 'bl', 'bc']:
                     filepath_static = data_static_location + 'static_G9KP_' + s + '.npy'
@@ -65,9 +65,6 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
                 
                 for i_ech, ech in enumerate(echeances):
                     X_d[i_ech, :, :, len(params) + i_s] = np.load(filepath_static)
-
-            if resample in ['bl', 'bc']:
-                X_d = np.pad(X_d, ((0,0), (5,4), (2,5), (0,0)), mode='edge')
         except FileNotFoundError:
             print('missing day (X): ' + d.isoformat())
             X_d = None

@@ -12,8 +12,9 @@ def mse_k(y_true, y_pred):
     return keras.backend.mean(keras.backend.square(y_pred - y_true), axis=-1)
 
 
-def mse_terre_mer_k(y_true, y_pred, frac=0.5): # fonctionne pour des inputs complets adaptés à la grille de sortie (interpolation nearest, bl ou bc)
-    shape = y_true.get_shape()[1:4]
+def mse_terre_mer_k(y_true, y_pred, shape, frac=0.5): # fonctionne pour des inputs complets adaptés à la grille de sortie (interpolation nearest, bl ou bc)
+    shape = shape[1:4]
+    # print(shape)
     ind_terre_mer = np.load('/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy', allow_pickle=True)
     ind_terre_mer = np.pad(ind_terre_mer, ((5,5), (2,3)), mode='reflect')
     ind_terre_mer_numpy = np.zeros(shape)
@@ -27,8 +28,8 @@ def mse_terre_mer_k(y_true, y_pred, frac=0.5): # fonctionne pour des inputs comp
 
     return frac * mse_k(y_true_terre, y_pred_terre) + (1 - frac) * mse_k(y_true_mer, y_pred_mer)
 
-def mse_terre_mer(frac=0.5):
-    return lambda y_true, y_pred : mse_terre_mer_k(y_true, y_pred, frac=frac)
+def mse_terre_mer(shape, frac=0.5):
+    return lambda y_true, y_pred : mse_terre_mer_k(y_true, y_pred, shape, frac=frac)
 
 
 # ========== new MSE : 
@@ -60,7 +61,8 @@ def mse_terre_mer(frac=0.5):
 #     # return mean : 
 #     return 1/y_true.shape[0] * loss
 
-def modified_mse_k(y_true, y_pred, tau, eps):
+def modified_mse_k(y_true, y_pred, shape, tau, eps):
+    shape = shape[0:3]
     # beta coefficients: 
     b = (eps + y_true)/(eps + y_pred)
     weighted_mse = tf.math.reduce_sum(((y_pred - b * y_true)**2), axis=3)
@@ -71,7 +73,7 @@ def modified_mse_k(y_true, y_pred, tau, eps):
     norm_pred = tf.math.sqrt(norm_pred)
 
     bias = norm_pred - norm_true
-    zeros = tf.zeros(bias.get_shape())
+    zeros = tf.zeros(shape)
     if tf.math.reduce_min(tf.abs(bias)) <= 1e-15:
         t = tau
     else:
@@ -81,5 +83,5 @@ def modified_mse_k(y_true, y_pred, tau, eps):
     return loss
 
 
-def modified_mse(tau, eps):
-    return lambda y_true, y_pred : modified_mse_k(y_true, y_pred, tau, eps)
+def modified_mse(shape, tau, eps):
+    return lambda y_true, y_pred : modified_mse_k(y_true, y_pred, shape, tau, eps)

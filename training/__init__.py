@@ -1,7 +1,6 @@
 from training.generator import DataGenerator
-import data.load_data as ld
+from data.load_data import df_to_array
 import training.losses as losses
-
 
 
 def set_generators(
@@ -22,21 +21,21 @@ def set_generators(
     """
     train_generator = DataGenerator(X_train_df, y_train_df, training_opt["batch_size"])
     valid_generator = DataGenerator(X_valid_df, y_valid_df, training_opt["batch_size"])
-    X_test , y_test = ld.df_to_array(X_test_df) , ld.df_to_array(y_test_df)
+    X_test , y_test = df_to_array(X_test_df) , df_to_array(y_test_df)
 
     return train_generator, valid_generator, X_test, y_test
 
 
-def set_loss(training_opt):
+def set_loss(training_opt, shape):
     """
     Returns the loss that will be used for training.
     """
     if training_opt["loss"] == "mse":
         loss = "mse"
     elif training_opt["loss"] == "hybrid":
-        loss = losses.mse_terre_mer(training_opt["frac"])
-    elif training_opt["loss"] == "hybrid":
-        loss = losses.modified_mse(training_opt["tau"], training_opt["eps"])
+        loss = losses.mse_terre_mer(shape, training_opt["frac"])
+    elif training_opt["loss"] == "custom":
+        loss = losses.modified_mse(shape, training_opt["tau"], training_opt["eps"])
     else:
         raise NotImplementedError
     
