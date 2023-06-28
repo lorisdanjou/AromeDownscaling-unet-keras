@@ -1,7 +1,7 @@
 import os
 import argparse
 import data as Data
-from data.load_data import get_arrays_cols
+import utils
 import training as Training
 import matplotlib.pyplot as plt
 import unet as Unet
@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128.json',
+    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
                         help='JSON file for configuration')
     args = parser.parse_args()
     opt_path = args.config
@@ -62,8 +62,6 @@ if __name__ == "__main__":
     print("unet definition: ok")
 
     # training
-
-    ## pb avec shape
     shape = (
         opt["training"]["batch_size"],
         X_train_df[opt["data"]["params_in"][0]].iloc[0].shape[0],
@@ -117,7 +115,7 @@ if __name__ == "__main__":
     print("y_pred shape : {}".format(y_pred.shape))
 
     y_pred_df = y_test_df.copy()
-    arrays_cols = get_arrays_cols(y_pred_df)
+    arrays_cols = utils.get_arrays_cols(y_pred_df)
     for i in range(len(y_pred_df)):
         for i_c, c in enumerate(arrays_cols):
             y_pred_df[c][i] = y_pred[i, :, :, i_c]
@@ -136,7 +134,6 @@ if __name__ == "__main__":
     print("Total time: {:.2f} s".format(t5 - t0))
 
     ### TODO:
-    # reproduire plusieurs configurations avec les fichiers jsonc associés et les tester !
     # répertoire utils avec get_arrays_cols, etc.
     # ajouter un logger
     # faire un dernier tri dans les fichiers
