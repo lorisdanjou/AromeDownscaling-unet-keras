@@ -3,6 +3,7 @@ import data.load_data as ld
 import data.normalisations as norm
 import data.patches as patches
 import data.data_augmentation as da
+import utils
 
 def load_data(data_loading_opt):
     data_train_location  = data_loading_opt["data_train_location"]
@@ -127,8 +128,8 @@ def  preprocess_data(preproc_opt, output_dir, X_train_df, y_train_df, X_valid_df
         if patches_opt["train_method"] == "random":
             # [X, y]_train don't need to be padded 
             if patches_opt["test_method"] is None:
-                X_valid_df, y_valid_df = ld.pad(X_valid_df), ld.pad(y_valid_df)
-                X_test_df , y_test_df  = ld.pad(X_test_df),  ld.pad(y_test_df)
+                X_valid_df, y_valid_df = utils.pad(X_valid_df), utils.pad(y_valid_df)
+                X_test_df , y_test_df  = utils.pad(X_test_df),  utils.pad(y_test_df)
             elif patches_opt["test_method"] == "patchify":
                 X_valid_df, y_valid_df = patches.pad_for_patchify(X_valid_df), patches.pad_for_patchify(y_valid_df)
                 X_test_df , y_test_df  = patches.pad_for_patchify(X_test_df) , patches.pad_for_patchify(y_test_df)
@@ -136,16 +137,16 @@ def  preprocess_data(preproc_opt, output_dir, X_train_df, y_train_df, X_valid_df
         elif patches_opt["train_method"] == "patchify":
             X_train_df, y_train_df = patches.pad_for_patchify(X_train_df), patches.pad_for_patchify(y_train_df)
             if patches_opt["test_method"] is None:
-                X_valid_df, y_valid_df = ld.pad(X_valid_df), ld.pad(y_valid_df)
-                X_test_df , y_test_df  = ld.pad(X_test_df),  ld.pad(y_test_df)
+                X_valid_df, y_valid_df = utils.pad(X_valid_df), utils.pad(y_valid_df)
+                X_test_df , y_test_df  = utils.pad(X_test_df),  utils.pad(y_test_df)
             elif patches_opt["test_method"] == "patchify":
                 X_valid_df, y_valid_df = patches.pad_for_patchify(X_valid_df), patches.pad_for_patchify(y_valid_df)
                 X_test_df , y_test_df  = patches.pad_for_patchify(X_test_df) , patches.pad_for_patchify(y_test_df)
 
     else:
-        X_train_df, y_train_df = ld.pad(X_train_df), ld.pad(y_train_df)
-        X_valid_df, y_valid_df = ld.pad(X_valid_df), ld.pad(y_valid_df)
-        X_test_df , y_test_df  = ld.pad(X_test_df),  ld.pad(y_test_df)
+        X_train_df, y_train_df = utils.pad(X_train_df), utils.pad(y_train_df)
+        X_valid_df, y_valid_df = utils.pad(X_valid_df), utils.pad(y_valid_df)
+        X_test_df , y_test_df  = utils.pad(X_test_df),  utils.pad(y_test_df)
 
     # normalisation:
     if preproc_opt["normalisation"] is not None:
@@ -231,6 +232,6 @@ def postprocess_data(opt, y_pred_df):
         if patches_opt["test_method"] == "patchify":
             y_pred_df = patches.crop_for_patchify(y_pred_df)
     else:
-        y_pred_df = ld.crop(y_pred_df)
+        y_pred_df = utils.crop(y_pred_df)
 
     return y_pred_df

@@ -1,5 +1,5 @@
 from training.generator import DataGenerator
-from data.load_data import df_to_array
+import utils
 import training.losses as losses
 
 
@@ -21,7 +21,7 @@ def set_generators(
     """
     train_generator = DataGenerator(X_train_df, y_train_df, training_opt["batch_size"])
     valid_generator = DataGenerator(X_valid_df, y_valid_df, training_opt["batch_size"])
-    X_test , y_test = df_to_array(X_test_df) , df_to_array(y_test_df)
+    X_test , y_test = utils.df_to_array(X_test_df) , utils.df_to_array(y_test_df)
 
     return train_generator, valid_generator, X_test, y_test
 

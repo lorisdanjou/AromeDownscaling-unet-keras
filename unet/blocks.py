@@ -3,7 +3,7 @@ import tensorflow as tf
 from keras.layers import Conv2D, Conv2DTranspose, concatenate, BatchNormalization, Activation
 
 
-# ========== For classic Unet
+# for classic Unet
 def block_conv(conv, filters):
     conv = Conv2D(filters, 3, padding='same')(conv)
     conv = BatchNormalization()(conv)
@@ -27,7 +27,7 @@ def block_up(conv, filters):
     return conv
 
 
-# ========== For UResNet
+# for UResNet
 def block_res_conv(conv, filters):
     conv = Conv2D(filters, 3, padding='same')(conv)
     conv = BatchNormalization()(conv)

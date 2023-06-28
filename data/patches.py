@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
-from data.load_data import get_arrays_cols, param_to_array
+import utils
 from patchify import patchify, unpatchify
 from math import gcd
 
@@ -20,8 +20,8 @@ def extract_patches(X_df, y_df, patch_h, patch_w, n_patches):
         2 new pandas dataframs containing the patches
     """
 
-    arrays_cols_X = get_arrays_cols(X_df)
-    arrays_cols_y = get_arrays_cols(y_df)
+    arrays_cols_X = utils.get_arrays_cols(X_df)
+    arrays_cols_y = utils.get_arrays_cols(y_df)
     img_h = X_df[arrays_cols_X[0]][0].shape[0]
     img_w = X_df[arrays_cols_X[0]][0].shape[1]
 
@@ -77,7 +77,7 @@ def extract_patches_patchify(df, patch_size):
     Output : 
         A new dataframe
     """
-    channels = get_arrays_cols(df)
+    channels = utils.get_arrays_cols(df)
     img_h = df[channels[0]][0].shape[0]
     img_w = df[channels[0]][0].shape[1]
 
@@ -134,7 +134,7 @@ def rebuild_from_patchify(df_patches, img_h, img_w):
     Output : 
         A pandas dataframe containing the full images
     """
-    channels = get_arrays_cols(df_patches)
+    channels = utils.get_arrays_cols(df_patches)
     patch_size = df_patches[channels[0]][0].shape[0]
     img_example = np.zeros((img_h, img_w))
     step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
@@ -172,7 +172,7 @@ def rebuild_from_patchify(df_patches, img_h, img_w):
 # padding for patchify
 def pad_for_patchify(df):
     df_out = df.copy()
-    channels = get_arrays_cols(df)
+    channels = utils.get_arrays_cols(df)
     for c in channels:
         for i in range(len(df_out)):
             df_out[c][i] = np.pad(df_out[c][i], ((21,21), (27,26)), mode='reflect')
@@ -180,7 +180,7 @@ def pad_for_patchify(df):
 
 def crop_for_patchify(df):
     df_out = df.copy()
-    channels = get_arrays_cols(df)
+    channels = utils.get_arrays_cols(df)
     for c in channels:
         for i in range(len(df_out)):
             df_out[c][i] = df_out[c][i][21:-21, 27:-26]

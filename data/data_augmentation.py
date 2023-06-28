@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.random import randint
 import pandas as pd
-from data.load_data import get_arrays_cols
+import utils
 
 
 def random_flip(X_df, y_df, frac=0.1):
@@ -20,7 +20,7 @@ def random_flip(X_df, y_df, frac=0.1):
         values_X = [X_frac_df.dates.iloc[i], X_frac_df.echeances.iloc[i]]
         values_y = [y_frac_df.dates.iloc[i], y_frac_df.echeances.iloc[i]]
         rand = randint(3)
-        for i_c, c in enumerate(get_arrays_cols(X_frac_df)):
+        for i_c, c in enumerate(utils.get_arrays_cols(X_frac_df)):
             if rand == 0:
                 X_c_flip = X_frac_df[c].iloc[i][::, ::-1]
             elif rand == 1:
@@ -31,7 +31,7 @@ def random_flip(X_df, y_df, frac=0.1):
             values_X.append(X_c_flip)
         X_flip_df.loc[len(X_flip_df)] = values_X
 
-        for i_c, c in enumerate(get_arrays_cols(y_frac_df)):
+        for i_c, c in enumerate(utils.get_arrays_cols(y_frac_df)):
             if rand == 0:
                 y_c_flip = y_frac_df[c].iloc[i][::, ::-1]
             elif rand == 1:
@@ -64,13 +64,13 @@ def random_rot(X_df, y_df, frac=0.1):
     for i in range(len(X_frac_df)):
         values_X = [X_frac_df.dates.iloc[i], X_frac_df.echeances.iloc[i]]
         values_y = [y_frac_df.dates.iloc[i], y_frac_df.echeances.iloc[i]]
-        for i_c, c in enumerate(get_arrays_cols(X_frac_df)):
+        for i_c, c in enumerate(utils.get_arrays_cols(X_frac_df)):
             X_c_rot = np.rot90(X_frac_df[c].iloc[i], k=2)
 
             values_X.append(X_c_rot)
         X_rot_df.loc[len(X_rot_df)] = values_X
 
-        for i_c, c in enumerate(get_arrays_cols(y_frac_df)):
+        for i_c, c in enumerate(utils.get_arrays_cols(y_frac_df)):
             y_c_rot = np.rot90(y_frac_df[c].iloc[i], k=2)
             values_y.append(y_c_rot)
         y_rot_df.loc[len(y_rot_df)] = values_y
