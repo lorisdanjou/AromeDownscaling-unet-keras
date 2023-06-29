@@ -8,8 +8,7 @@ import unet as Unet
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from keras.optimizer_v2.adam import Adam
 from time import perf_counter
-import json
-from collections import OrderedDict
+import core.logger as logger
 
 
 if __name__ == "__main__":
@@ -17,14 +16,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
                         help='JSON file for configuration')
     args = parser.parse_args()
-    opt_path = args.config
-    # remove comments starting with '//'
-    json_str = ''
-    with open(opt_path, 'r') as f:
-        for line in f:
-            line = line.split('//')[0] + '\n'
-            json_str += line
-    opt = json.loads(json_str, object_pairs_hook=OrderedDict)
+    opt = logger.parse(args)
 
     # load & preprocess data
     t0 = perf_counter()
@@ -134,6 +126,6 @@ if __name__ == "__main__":
     print("Total time: {:.2f} s".format(t5 - t0))
 
     ### TODO:
-    # répertoire utils avec get_arrays_cols, etc.
     # ajouter un logger
     # faire un dernier tri dans les fichiers
+    # résultats

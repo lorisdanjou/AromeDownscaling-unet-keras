@@ -73,5 +73,10 @@
         "learning_rate": 0.005,
         "n_epochs": 1,
         "run_eagerly": false //true when loss == "custom"
+    },
+    "results": {
+        "cmap": "viridis",
+        "units": ["K"],
+        "n": 10
     }
 }

@@ -1,5 +1,7 @@
 import numpy as np
 
+IMG_EXTENT = [54.866, 56.193872, -20.5849, -21.6499]
+
 
 def get_arrays_cols(df):
     arrays_cols = []
@@ -59,3 +61,8 @@ def df_to_array(df):
         for i_c, c in enumerate(arrays_cols):
             array[i, :, :, i_c] = df[c].iloc[i]
     return array
+
+
+def get_ind_terre_mer_500m():
+    filepath = '/cnrm/recyf/Data/users/danjoul/dataset/static_G9KP_SURFIND.TERREMER.npy'
+    return np.load(filepath)

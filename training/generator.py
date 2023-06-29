@@ -1,6 +1,6 @@
 import numpy as np
 from tensorflow.keras.utils import Sequence
-from data.load_data import *
+import utils
 
 
 class DataGenerator(Sequence):
@@ -23,8 +23,8 @@ class DataGenerator(Sequence):
         # Generate indexes of the batch
         indexes = self.indexes[index * self.batch_size : (index + 1) * self.batch_size]
         # Find list of IDs
-        X = df_to_array(self.X_df.loc[indexes])
-        y = df_to_array(self.y_df.loc[indexes])
+        X = utils.df_to_array(self.X_df.loc[indexes])
+        y = utils.df_to_array(self.y_df.loc[indexes])
         return X, y
 
     def on_epoch_end(self):
