@@ -138,10 +138,9 @@ if __name__ == "__main__":
         for expe_df in expes_results:
             corr_lens_df.append(corr_len.compute_corr_len(expe_df))
         corr_len.plot_synthesis_corr_len(
-            expes_results,
             expes_names,
+            corr_lens_df,
             opt["path"]["output_dir"]
         )
 
     # correlation
-    
