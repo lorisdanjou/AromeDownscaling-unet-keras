@@ -1,147 +1,147 @@
-import numpy as np
-import pandas as pd
-from results.results import *
-from results.synthesis import *
-from bronx.stdtypes.date import daterangex as rangex
-import matplotlib.pyplot as plt
-from matplotlib import colors
-
-data_train_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_train/'
-data_valid_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
-data_test_location = '/cnrm/recyf/Data/users/danjoul/dataset/data_test/'
-data_static_location = '/cnrm/recyf/Data/users/danjoul/dataset/'
-baseline_location = '/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/'
+import argparse
+import core.logger as logger
+import results.outputs as outputs
+import results.pointwise_scores as ps
+import results.WD as wd
+import results.PSD as psd
+import results.correlation_length as corr_len
+import warnings
+warnings.filterwarnings("ignore")
 
 
-# ========== Setup (normal mode)
-# dates_train = rangex([
-#     '2020070100-2021053100-PT24H'
-# ])
-# dates_valid = rangex([
-#     '2021080100-2021083100-PT24H',
-#     '2021100100-2021103100-PT24H',
-#     '2021100100-2021123100-PT24H',
-#     '2022020100-2022022800-PT24H',
-#     '2022040100-2022043000-PT24H',
-#     '2022060100-2022063000-PT24H'
-# ])
-# dates_test = rangex([
-#     '2021070100-2021073100-PT24H',
-#     '2021090100-2021093000-PT24H',
-#     '2021110100-2021113000-PT24H',
-#     '2022030100-2022033100-PT24H',
-#     '2022050100-2022053100-PT24H'
-# ])
+if __name__ == "__main__":
 
-# ========== Setup (optimisation mode)
-dates_test = rangex([
-        '2021080100-2021083100-PT24H',
-        '2021100100-2021103100-PT24H',
-        '2021100100-2021123100-PT24H',
-        '2022020100-2022022800-PT24H',
-        '2022040100-2022043000-PT24H',
-        '2022060100-2022063000-PT24H'
-    ])
-param = 'u10'
-echeances = range(6, 37, 3)
-output_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/eps/'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
+                        help='JSON file for configuration')
 
-# ========== Load results
-# expes_names = ['basic', 'standardisation', 'min-max', 'mean']
-# expes_results = [
-#     load_results(output_dir + 'basic_normalisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'standardisation/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'minmax/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'mean/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
-# ]
-# expes_names = ['16', '32', '64']
-# expes_results = [
-#     load_results(output_dir + '16/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '32/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '64/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
-# ]
-# expes_names = ['mae', 'mse', 'huber']
-# expes_results = [
-#     load_results(output_dir + 'mae/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'mse/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'huber/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
-# ]
-# expes_names = ['0.2', '0.3', '0.4', '0.5', '0.55', '0.6']
-# expes_results = [
-#     load_results(output_dir + '0.2-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.3-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.4-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.5-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.55-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.6-terre_mer/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
-# ]
-# expes_names = ['0.3-mse', '0.4-mse', '0.5-mse', '0.6-mse', '0.7-mse', '0.8-mse']
-# base_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/'
-# expes_results = [
-#     load_results(base_dir + '0.3-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(base_dir + '0.4-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(base_dir + '0.5-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(base_dir + '0.6-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(base_dir + '0.7-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-#     load_results(base_dir + '0.8-mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
-# ]
-base_dir = '/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/custom_loss/'
-expes_names = ['mse', '5', '8', '10', '13', '14', '15', '16', '17', '20']
-expes_results = [
-    load_results('/cnrm/recyf/Data/users/danjoul/unet_experiments/wind/losses/mse/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-5/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-8/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-10/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-13/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-14/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-15/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-16/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-17/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param),
-    load_results(base_dir + '0.6-20/', dates_test, echeances, 'r', data_test_location, baseline_location, param=param)
-]
-# expes_names = ['0', '0.1', '0.2', '0.3', '0.4', '0.5']
-# expes_results = [
-#     load_results('/cnrm/recyf/Data/users/danjoul/unet_experiments/params/t2m/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.1-flip/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.2-flip/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.3-flip/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.4-flip/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + '0.5-flip/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
-# ]
-# expes_names = ['t2m', 'toa', 'ts', 'tke', 'cape', 'uv10', 'SURFGEOPOTENTIEL', 'SURFIND.TERREMER', 'SFX.BATHY']
-# expes_results = [
-#     load_results(output_dir + 't2m/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'toa/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'ts/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'tke/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'cape/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'uv10/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'SURFGEOPOTENTIEL/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'SURFIND.TERREMER/', dates_test, echeances, resample, data_test_location, baseline_location, param=param),
-#     load_results(output_dir + 'SFX.BATHY/', dates_test, echeances, resample, data_test_location, baseline_location, param=param)
-# ]
+    # parse configs
+    args = parser.parse_args()
+    opt = logger.parse(args)
 
+    expes_names = opt["expes"]["names"]
+    expes_paths = opt["expes"]["results"]
+    expes_interps = opt["expes"]["interp"]
 
-# ========== Graphs
-# print('maps')
-# synthesis_maps(expes_names, expes_results, output_dir, full=True)
-# print('score maps')
-# synthesis_score_maps(expes_names, expes_results, output_dir, mse, 'mse')
-# synthesis_score_maps(expes_names, expes_results, output_dir, mae, 'mae')
-# synthesis_score_maps(expes_names, expes_results, output_dir, biais, 'biais')
-# synthesis_score_maps(expes_names, expes_results, output_dir, ssim, 'ssim', cmap='plasma')
-# synthesis_unique_score_map(expes_names, expes_results, output_dir, mae, 'mae')
-# synthesis_unique_score_map(expes_names, expes_results, output_dir, mse, 'mse')
-# synthesis_unique_score_map(expes_names, expes_results, output_dir, biais, 'biais')
-# synthesis_unique_score_map(expes_names, expes_results, output_dir, ssim, 'ssim', cmap='plasma')
-# print('distributions')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, mse, 'mse')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, mae, 'mae')
-# synthesis_score_distribs(expes_names, expes_results, output_dir, ssim, 'ssim')
-# synthesis_corr_distrib(expes_names, expes_results, output_dir)
-# print('wasserstein')
-# synthesis_wasserstein_distance_distrib(expes_names, expes_results, output_dir)
-print('PSDs')
-synthesis_PSDs(expes_names, expes_results, output_dir)
-print('corr_len')
-synthesis_corr_len(expes_names, expes_results, output_dir)
+    print("Loading results ...")
+    expes_results = [
+        outputs.load_results(
+            expes_paths[i], 
+            expes_interps[i], 
+            opt["data"]["data_test_location"], 
+            opt["data"]["baseline_location"], 
+            param=opt["data"]["param"]
+        ) for i in range(len(expes_paths))
+    ]
+
+    # plot maps NON
+    print("Ploting maps ...")
+    outputs.plot_synthesis_maps(
+        expes_names,
+        expes_results,
+        opt["path"]["output_dir"],
+        opt["data"]["param"],
+        opt["data"]["unit"], 
+        cmap=opt["maps"]["cmap"]
+
+    )
+
+    # pointwise scores
+    if opt["mae"]:
+        print("Computing & Plotting MAE ...")
+        maes_df = []
+        for expe_df in expes_results:
+            maes_df.append(ps.compute_score(expe_df, ps.mae, "MAE"))
+        ps.plot_synthesis_scores(
+            expes_names,
+            maes_df,
+            opt["path"]["output_dir"],
+            "MAE",
+            opt["data"]["unit"], 
+            cmap="BuPu"
+        )
+
+    if opt["mse"]:
+        print("Computing & Plotting MSE ...")
+        mses_df = []
+        for expe_df in expes_results:
+            mses_df.append(ps.compute_score(expe_df, ps.mse, "MSE"))
+        ps.plot_synthesis_scores(
+            expes_names,
+            mses_df,
+            opt["path"]["output_dir"],
+            "MSE",
+            "$" + opt["data"]["unit"] + "\{^2}$", 
+            cmap="BuPu"
+        )
+
+    if opt["bias"]:
+        print("Computing & Plotting bias ...")
+        bias_df = []
+        for expe_df in expes_results:
+            bias_df.append(ps.compute_score(expe_df, ps.bias, "bias"))
+        ps.plot_synthesis_scores(
+            expes_names,
+            bias_df,
+            opt["path"]["output_dir"],
+            "bias",
+            opt["data"]["unit"], 
+            cmap="coolwarm"
+        )
+        
+
+    if opt["ssim"]:
+        print("Computing & Plotting SSIM ...")
+        ssim_df = []
+        for expe_df in expes_results:
+            ssim_df.append(ps.compute_score(expe_df, ps.ssim, "SSIM"))
+        ps.plot_synthesis_scores(
+            expes_names,
+            ssim_df,
+            opt["path"]["output_dir"],
+            "SSIM",
+            "", 
+            cmap="plasma"
+        )
+
+    
+    # WD
+    if opt["WD"]:
+        print("Computing & Plotting WD ...")
+        wds_df = []
+        wds_df_terre = []
+        wds_df_mer = []
+        for expe_df in expes_results:
+            wds_df.append(wd.compute_datewise_WD(expe_df))
+            wds_df_terre.append(wd.compute_datewise_WD_terre(expe_df))
+            wds_df_mer.append(wd.compute_datewise_WD_mer(expe_df))
+        wd.synthesis_wasserstein_distance_distrib(
+            expes_names,
+            wds_df,
+            wds_df_terre,
+            wds_df_mer,
+            opt["path"]["output_dir"]
+        )
+
+    # PSDs
+    if opt["PSD"]:
+        print("Computing & Plotting PSDs ...")
+        psds_df = []
+        for expe_df in expes_results:
+            psds_df.append(psd.PSD(expe_df))
+        psd.synthesis_PSDs(expes_names, psds_df, opt["path"]["output_dir"])
+
+    # correlation length
+    if opt["corr_len"]:
+        print("Computing & Plotting correlation lengths ...")
+        corr_lens_df = []
+        for expe_df in expes_results:
+            corr_lens_df.append(corr_len.compute_corr_len(expe_df))
+        corr_len.plot_synthesis_corr_len(
+            expes_results,
+            expes_names,
+            opt["path"]["output_dir"]
+        )
+
+    # correlation
+    

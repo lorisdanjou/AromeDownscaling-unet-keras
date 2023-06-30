@@ -143,34 +143,31 @@ def plot_corr_len(corr_len_df, output_dir):
     plt.savefig(output_dir + 'correlation_length_maps.png', bbox_inches='tight')
 
 
-if __name__ == "__main__":
-    import os
-    import argparse
-    import core.logger as logger
-    import load_results as lr
-    import warnings
-    warnings.filterwarnings("ignore")
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
-                        help='JSON file for configuration')
+def plot_synthesis_corr_len(expes_names, corr_lens_df, output_dir):
+    n_expes = len(corr_lens_df)
+    fig = plt.figure(figsize=[5*n_expes, 9])
+    fig.suptitle("Correlation length", fontsize=30)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    axs = []
+    for j in range(n_expes + 2):
+        axs.append(fig.add_subplot(2, n_expes, j+1, projection=ccrs.PlateCarree()))
+        axs[j].set_extent(utils.IMG_EXTENT)
+        axs[j].coastlines(resolution='10m', color='black', linewidth=1)
 
-    # parse configs
-    args = parser.parse_args()
-    opt = logger.parse(args)
-
-
-    # load & plot results
-    y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
-
-    for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = lr.load_results(
-            "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
-            resample = opt["data"]["interp"],
-            data_test_location = opt["data"]["data_test_location"],
-            baseline_location = opt["data"]["baseline_location"],
-            param=param
-        )
-        
-        corr_len_df = compute_corr_len(results_df)
-        plot_corr_len(corr_len_df, opt["path"]["results"])
+    data = [corr_lens_df[j]["corr_len_pred"][0] for j in range(n_expes)] + \
+        [corr_lens_df[0]["corr_len_baseline"][0], corr_lens_df[0]["corr_len_test"][0]]
+    images = []
+    for j in range(2 + n_expes):
+        images.append(axs[j].imshow(data[j], cmap="viridis", origin='upper', extent=utils.IMG_EXTENT, transform=ccrs.PlateCarree()))
+        axs[j].label_outer()
+    vmin = min(image.get_array().min() for image in images)
+    vmax = max(image.get_array().max() for image in images)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    for im in images:
+        im.set_norm(norm)
+    for j in range(n_expes):
+        axs[j].set_title("Unet {}".format(expes_names[j]))
+    axs[-2].set_title('fullpos')
+    axs[-1].set_title('Arome500m')
+    fig.colorbar(images[0], ax=axs, label="correlation lenght [km]")
+    plt.savefig(output_dir + 'synthesis_map_corr_len.png', bbox_inches='tight')

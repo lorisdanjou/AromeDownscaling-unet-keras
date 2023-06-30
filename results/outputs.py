@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import utils
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import cartopy.crs as ccrs
@@ -69,20 +70,19 @@ def load_results(y_pred_path, resample, data_test_location, baseline_location, p
     return results_df
 
 
-def plot_results(results_df, output_dir, param, unit, cmap="viridis", n=10):
-    IMG_EXTENT = [54.866, 56.193872, -20.5849, -21.6499]
+def plot_maps(results_df, output_dir, param, unit, cmap="viridis", n=10):
     for i in range(n):
         fig = plt.figure(figsize=[25, 6])
         axs = []
         for j in range(4):
             axs.append(fig.add_subplot(1, 4, j+1, projection=ccrs.PlateCarree()))
-            axs[j].set_extent(IMG_EXTENT)
+            axs[j].set_extent(utils.IMG_EXTENT)
             axs[j].coastlines(resolution='10m', color='black', linewidth=1)
 
         data = [results_df.X_test[i], results_df.baseline[i], results_df.y_pred[i], results_df.y_test[i]]
         images = []
         for j in range(4):
-            images.append(axs[j].imshow(data[j], cmap=cmap, origin='upper', extent=IMG_EXTENT, transform=ccrs.PlateCarree()))
+            images.append(axs[j].imshow(data[j], cmap=cmap, origin='upper', extent=utils.IMG_EXTENT, transform=ccrs.PlateCarree()))
             axs[j].label_outer()
         vmin = min(image.get_array().min() for image in images)
         vmax = max(image.get_array().max() for image in images)
@@ -97,37 +97,32 @@ def plot_results(results_df, output_dir, param, unit, cmap="viridis", n=10):
         plt.savefig(output_dir + 'results_' + str(i) + '_' + param + '.png', bbox_inches='tight')
 
 
-if __name__ == "__main__":
-    import os
-    import argparse
-    import core.logger as logger
-    import warnings
-    warnings.filterwarnings("ignore")
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
-                        help='JSON file for configuration')
+def plot_synthesis_maps(expes_names, expes_results, output_dir, param, unit, cmap="viridis", n=10):
+    n_expes = len(expes_results)
+    for i in range(n):
+        fig = plt.figure(figsize=[max(5*n_expes, 15), 9])
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        axs = []
+        for j in range(n_expes + 3):
+            axs.append(fig.add_subplot(2, max(3, n_expes), j+1, projection=ccrs.PlateCarree()))
+            axs[j].set_extent(utils.IMG_EXTENT)
+            axs[j].coastlines(resolution='10m', color='black', linewidth=1)
 
-    # parse configs
-    args = parser.parse_args()
-    opt = logger.parse(args)
-
-
-    # load & plot results
-    y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
-
-    for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = load_results(
-            "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
-            resample = opt["data"]["interp"],
-            data_test_location = opt["data"]["data_test_location"],
-            baseline_location = opt["data"]["baseline_location"],
-            param=param
-        )
-        plot_results(
-            results_df, opt["path"]["results"],
-            param=param,
-            unit=opt["results"]["units"][i_p],
-            cmap=opt["results"]["cmap"],
-            n=opt["results"]["n"]
-        )
+        data = [expes_results[j].y_pred.iloc[i]for j in range(n_expes)] + \
+            [expes_results[0].X_test.iloc[i], expes_results[0].baseline.iloc[i], expes_results[0].y_test.iloc[i]]
+        images = []
+        for j in range(3 + n_expes):
+            images.append(axs[j].imshow(data[j], cmap=cmap, origin='upper', extent=utils.IMG_EXTENT, transform=ccrs.PlateCarree()))
+            axs[j].label_outer()
+        vmin = min(image.get_array().min() for image in images)
+        vmax = max(image.get_array().max() for image in images)
+        norm = colors.Normalize(vmin=vmin, vmax=vmax)
+        for im in images:
+            im.set_norm(norm)
+        for j in range(n_expes):
+            axs[j].set_title("Unet {}".format(expes_names[j]))
+        axs[-3].set_title('Arome2km5')
+        axs[-2].set_title('fullpos')
+        axs[-1].set_title('Arome500m')
+        fig.colorbar(images[0], ax=axs, label="{} [{}]".format(param, unit))
+        plt.savefig(output_dir + 'synthesis_' + str(i) + '_map.png', bbox_inches='tight')

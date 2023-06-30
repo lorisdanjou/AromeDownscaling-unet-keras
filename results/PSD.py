@@ -2,6 +2,7 @@ import numpy as np
 from scipy.fftpack import dct
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 
 
@@ -146,34 +147,27 @@ def plot_PSDs(psd_df, output_dir):
     fig.savefig(output_dir + 'PSDs.png')
 
 
-if __name__ == "__main__":
-    import os
-    import argparse
-    import core.logger as logger
-    import load_results as lr
-    import warnings
-    warnings.filterwarnings("ignore")
+def synthesis_PSDs(expes_names, psds_df, output_dir):
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(22, 11))
+    colormap = plt.get_cmap('cool')
+    axs[1].set_prop_cycle(mpl.cycler(color=[colormap(k) for k in np.linspace(0, 1, len(psds_df))]))
+    for i in range(len(expes_names)):
+        psd_df = psds_df[i]
+        axs[1].plot(psd_df.psd_pred, label=expes_names[i])
+    axs[1].plot(psd_df.psd_test, color="k", label="Arome500m")
+    axs[1].grid()
+    axs[1].loglog()
+    axs[1].legend()
+    axs[1].set_xlabel("$k$ [$km^{-1}$]")
+
+    axs[0].grid()
+    axs[0].plot(psd_df.psd_X_test, color="b", linestyle="dashed", label="Arome2km5")
+    axs[0].plot(psd_df.psd_baseline, color="r", linestyle="dashed", label="fullpos")
+    axs[0].plot(psd_df.psd_test, color="k", label="Arome500m")
+    axs[0].loglog()
+    axs[0].legend()
+    axs[0].set_xlabel("$k$ [$km^{-1}$]")
+
+    fig.suptitle("PSDs", fontsize=30)
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
-                        help='JSON file for configuration')
-
-    # parse configs
-    args = parser.parse_args()
-    opt = logger.parse(args)
-
-
-    # load & plot results
-    y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
-
-    for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = lr.load_results(
-            "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
-            resample = opt["data"]["interp"],
-            data_test_location = opt["data"]["data_test_location"],
-            baseline_location = opt["data"]["baseline_location"],
-            param=param
-        )
-
-        psd_df = PSD(results_df)
-        plot_PSDs(psd_df, opt["path"]["results"])
+    fig.savefig(output_dir + 'PSDs.png', bbox_inches='tight')

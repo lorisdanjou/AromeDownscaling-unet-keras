@@ -147,52 +147,6 @@ def plot_unique_score_map(metric_df, output_dir, metric_name, unit, cmap="viridi
     plt.savefig(output_dir + metric_name + '_unique_map.png', bbox_inches="tight")
 
 
-######################################## Anciennes versions avec imshow #####################################################
-# plot score maps
-# def plot_score_maps(metric_df, metric_name, output_dir, cmap='coolwarm'):
-#     for i in range(10):
-#         metric_df = compute_score(metric_df, metric_name)
-#         fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (25, 12))
-#         images = []
-#         data = [metric_df[metric_name + '_baseline_map'][i], metric_df[metric_name + '_y_pred_map'][i]]
-#         for j in range(len(data)):
-#             im = axs[j].imshow(data[j], cmap=cmap, origin="lower")
-#             images.append(im)
-#             axs[j].label_outer()
-#         vmin = min(image.get_array().min() for image in images)
-#         vmax = max(image.get_array().max() for image in images)
-#         norm = colors.Normalize(vmin=vmin, vmax=vmax)
-#         for im in images:
-#             im.set_norm(norm)
-#         axs[0].set_title('baseline global')
-#         axs[1].set_title('pred global')
-#         fig.colorbar(images[0], ax=axs)
-#         plt.savefig(output_dir + metric_name + str(i) + '_map.png')
-
-# def plot_unique_score_map(metric_df, metric_name, output_dir, cmap='coolwarm'):
-#     metric_df = compute_score(metric_df, metric_name)
-#     metric_baseline = metric_df[metric_name + '_baseline_map'].mean()
-#     metric_y_pred   = metric_df[metric_name + '_baseline_map'].mean()
-#     fig, axs = plt.subplots(nrows=1,ncols=2, figsize = (25, 12))
-#     images = []
-#     data = [metric_baseline, metric_y_pred]
-#     for j in range(len(data)):
-#         im = axs[j].imshow(data[j], cmap=cmap, origin="lower")
-#         images.append(im)
-#         axs[j].label_outer()
-#     vmin = min(image.get_array().min() for image in images)
-#     vmax = max(image.get_array().max() for image in images)
-#     norm = colors.Normalize(vmin=vmin, vmax=vmax)
-#     for im in images:
-#         im.set_norm(norm)
-#     mean = metric_baseline.mean()
-#     axs[0].set_title('baseline ' + metric_name  + ' ' + f'{mean:.2f}')
-#     mean = metric_y_pred.mean()
-#     axs[1].set_title('pred ' + metric_name  + ' ' + f'{mean:.2f}')
-#     fig.colorbar(images[0], ax=axs)
-#     plt.savefig(output_dir + metric_name + '_unique_map.png')
-############################################################################################################################
-
 def plot_distrib(metric_df, metric_name, output_dir):
     score_baseline = metric_df[metric_name + '_baseline_mean']
     score_baseline_terre = compute_score_terre(metric_df, metric_name)[metric_name + '_baseline_mean']
@@ -235,37 +189,90 @@ def plot_distrib(metric_df, metric_name, output_dir):
     plt.savefig(output_dir + 'distribution_' +  metric_name + '.png')
 
 
-if __name__ == "__main__":
-    import os
-    import argparse
-    import core.logger as logger
-    import load_results as lr
-    import warnings
-    warnings.filterwarnings("ignore")
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
-                        help='JSON file for configuration')
+def plot_synthesis_scores(expes_names, metrics_df, output_dir, metric_name, unit, cmap="viridis"):
+    n_expes = len(metrics_df)
+    fig = plt.figure(figsize=[5*n_expes, 9])
+    fig.suptitle(metric_name, fontsize=30)
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    axs = []
+    for j in range(n_expes + 1):
+        axs.append(fig.add_subplot(2, n_expes, j+1, projection=ccrs.PlateCarree()))
+        axs[j].set_extent(utils.IMG_EXTENT)
+        axs[j].coastlines(resolution='10m', color='black', linewidth=1)
 
-    # parse configs
-    args = parser.parse_args()
-    opt = logger.parse(args)
+    data = [metrics_df[j][metric_name + "_y_pred_map"].mean() for j in range(n_expes)] + \
+        [metrics_df[0][metric_name + "_baseline_map"].mean()]
+    images = []
+    for j in range(1 + n_expes):
+        images.append(axs[j].imshow(data[j], cmap=cmap, origin='upper', extent=utils.IMG_EXTENT, transform=ccrs.PlateCarree()))
+        axs[j].label_outer()
+    vmin = min(image.get_array().min() for image in images)
+    vmax = max(image.get_array().max() for image in images)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    for im in images:
+        im.set_norm(norm)
+    for j in range(n_expes):
+        axs[j].set_title("Unet {}".format(expes_names[j]))
+    axs[-1].set_title('fullpos')
+    fig.colorbar(images[0], ax=axs, label="{} [{}]".format(metric_name, unit))
+    plt.savefig(output_dir + 'synthesis_map_{}.png'.format(metric_name), bbox_inches='tight')
 
 
-    # load & plot results
-    y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
-
-    for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = lr.load_results(
-            "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
-            resample = opt["data"]["interp"],
-            data_test_location = opt["data"]["data_test_location"],
-            baseline_location = opt["data"]["baseline_location"],
-            param=param
-        )
+def synthesis_score_distribs(expes_names, metrics_df, metrics_df_terre, metrics_df_mer, output_dir, metric_name):
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
+    D = []
+    D_terre = []
+    D_mer = []
+    labels = expes_names + ['baseline']
+    for i in range(len(metrics_df)):
+        metric_df = metrics_df[i]
+        metric_df_terre = metrics_df_terre[i]
+        metric_df_mer   = metrics_df_mer[i]
+        score_baseline       = metric_df[metric_name + '_baseline_mean']
+        score_pred           = metric_df[metric_name + '_y_pred_mean']
+        score_baseline_terre = metric_df_terre[metric_name + '_baseline_mean']
+        score_pred_terre     = metric_df_terre[metric_name + '_y_pred_mean']
+        score_baseline_mer   = metric_df_mer[metric_name + '_baseline_mean']
+        score_pred_mer       = metric_df_mer[metric_name + '_y_pred_mean']
         
-        # MAE
-        mae_df = compute_score(results_df, mae, "MAE")
-        plot_score_maps(mae_df, output_dir=opt["path"]["results"], metric_name="MAE", unit="K", cmap=opt["results"]["cmap"])
-        plot_unique_score_map(mae_df, output_dir=opt["path"]["results"], metric_name="MAE", unit="K", cmap=opt["results"]["cmap"])
-        plot_distrib(mae_df, "MAE", opt["path"]["results"])
+        D.append(score_pred)
+        D_terre.append(score_pred_terre)
+        D_mer.append(score_pred_mer)
+    D.append(score_baseline)
+    D_terre.append(score_baseline_terre)
+    D_mer.append(score_baseline_mer)
+    axs[0].grid()
+    axs[1].grid()
+    axs[2].grid()
+    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    axs[0].set_title(metric_name + ' distribution')
+    axs[1].set_title(metric_name + ' terre distribution')
+    axs[2].set_title(metric_name + ' mer distribution')
+    # axs.tick_params(axis='x', rotation=90)
+    plt.savefig(output_dir + 'synthesis_distributions_' +  metric_name + '.png', bbox_inches='tight')

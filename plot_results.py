@@ -52,8 +52,8 @@ if __name__ == "__main__":
                     mae_df, 
                     output_dir=opt["path"]["results"], 
                     metric_name="MAE", 
-                    unit=pointwise_opt["mas"]["units"][i_p], 
-                    cmap="coolwarm"
+                    unit=pointwise_opt["mae"]["units"][i_p], 
+                    cmap=pointwise_opt["mae"]["cmap"]
                 )
             elif pointwise_opt["mae"]["mode"] == "unique":
                 ps.plot_unique_score_map(
@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="MAE", 
                     unit=pointwise_opt["mae"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["mae"]["cmap"]
                 )
             ps.plot_distrib(mae_df, "MAE", opt["path"]["results"])
         
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="MSE", 
                     unit=pointwise_opt["mse"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["mse"]["cmap"]
                 )
             elif pointwise_opt["mse"]["mode"] == "unique":
                 ps.plot_unique_score_map(
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="MSE", 
                     unit=pointwise_opt["mse"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["mse"]["cmap"]
                 )
             ps.plot_distrib(mse_df, "MSE", opt["path"]["results"])
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="bias", 
                     unit=pointwise_opt["bias"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["bias"]["cmap"]
                 )
             elif pointwise_opt["mse"]["mode"] == "unique":
                 ps.plot_unique_score_map(
@@ -101,7 +101,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="bias", 
                     unit=pointwise_opt["bias"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["bias"]["cmap"]
                 )
             ps.plot_distrib(bias_df, "bias", opt["path"]["results"])
 
@@ -113,7 +113,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="SSIM", 
                     unit=pointwise_opt["ssim"]["units"][i_p], 
-                    cmap="coolwarm"
+                    cmap=pointwise_opt["ssim"]["cmap"]
                 )
             elif pointwise_opt["ssim"]["mode"] == "unique":
                 ps.plot_unique_score_map(
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                     output_dir=opt["path"]["results"], 
                     metric_name="SSIM", 
                     unit=pointwise_opt["ssim"]["units"][i_p], 
-                    cmap="plasma"
+                    cmap=pointwise_opt["ssim"]["cmap"]
                 )
             ps.plot_distrib(ssim_df, "SSIM", opt["path"]["results"])
 

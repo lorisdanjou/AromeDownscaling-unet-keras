@@ -1,0 +1,36 @@
+{
+    "path": {
+        "output_dir": "/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/"
+    },
+    "data": {
+        "data_train_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_train/",
+        "data_valid_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_test/",
+        "data_test_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_test/",
+        "data_static_location": "/cnrm/recyf/Data/users/danjoul/dataset/",
+        "baseline_location": "/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/",
+        "param": "t2m",
+        "unit": "K",
+        "echeances": [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
+    },
+    "expes": {
+        "results": [
+            "/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/t2m/y_pred.csv",
+            "/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/toa/y_pred.csv",
+            "/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/ts/y_pred.csv"
+        ],
+        "names": ["t2m", "toa", "ts"],
+        "interp": ["r", "r", "r"]
+    },
+    "maps": {
+        "cmap": "viridis",
+        "n": 10
+    },
+    "mae":      false,
+    "mse":      false,
+    "bias":     false,
+    "ssim":     false,
+    "WD":       false,
+    "PSD":      false,
+    "corr_len": true,
+    "corr":     true
+}

@@ -114,37 +114,61 @@ def plot_datewise_wasserstein_distance_distrib(wd_df, wd_df_terre, wd_df_mer, ou
     plt.savefig(output_dir + 'distribution_wd.png')
 
 
-if __name__ == "__main__":
-    import os
-    import argparse
-    import core.logger as logger
-    import load_results as lr
-    import warnings
-    warnings.filterwarnings("ignore")
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_example.jsonc',
-                        help='JSON file for configuration')
-
-    # parse configs
-    args = parser.parse_args()
-    opt = logger.parse(args)
-
-
-    # load & plot results
-    y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
-
-    for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = lr.load_results(
-            "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
-            resample = opt["data"]["interp"],
-            data_test_location = opt["data"]["data_test_location"],
-            baseline_location = opt["data"]["baseline_location"],
-            param=param
-        )
-
-        wd_df       = compute_datewise_WD(results_df)
-        wd_df_terre = compute_datewise_WD_terre(results_df)
-        wd_df_mer   = compute_datewise_WD_mer(results_df)
-
-        plot_datewise_wasserstein_distance_distrib(wd_df, wd_df_terre, wd_df_mer, opt["path"]["results"])
+def synthesis_wasserstein_distance_distrib(expes_names, wds_df, wds_df_terre, wds_df_mer, output_dir):
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
+    D = []
+    D_terre = []
+    D_mer = []
+    labels = list(expes_names) + ['baseline']
+    for i in range(len(wds_df)):
+        wd_df                = wds_df[i]
+        wd_df_baseline       = wd_df['datewise_wasserstein_distance_baseline']
+        wd_df_pred           = wd_df['datewise_wasserstein_distance_pred']
+        wd_df_terre          = wds_df_terre[i]
+        wd_df_baseline_terre = wd_df_terre['datewise_wasserstein_distance_baseline']
+        wd_df_pred_terre     = wd_df_terre['datewise_wasserstein_distance_pred']
+        wd_df_mer            = wds_df_mer[i]
+        wd_df_baseline_mer   = wd_df_mer['datewise_wasserstein_distance_baseline']
+        wd_df_pred_mer       = wd_df_mer['datewise_wasserstein_distance_pred']
+        
+        D.append(wd_df_pred)
+        D_terre.append(wd_df_pred_terre)
+        D_mer.append(wd_df_pred_mer)
+    D.append(wd_df_baseline)
+    D_terre.append(wd_df_baseline_terre)
+    D_mer.append(wd_df_baseline_mer)
+    axs[0].grid()
+    axs[1].grid()
+    axs[2].grid()
+    VP = axs[0].boxplot(D, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[1].boxplot(D_terre, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    VP = axs[2].boxplot(D_mer, positions=range(0, 3*(len(expes_names)+1), 3), widths=1.5, patch_artist=True,
+                    showmeans=True, meanline=True, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                            "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5},
+                    meanprops = dict(linestyle='--', linewidth=2.5, color='purple'),
+                    labels=labels)
+    axs[0].set_title('Wasserstein distance distribution')
+    axs[1].set_title('Wasserstein distance terre distribution')
+    axs[2].set_title('Wasserstein distance mer distribution')
+    # axs.tick_params(axis='x', rotation=90)
+    plt.savefig(output_dir + 'synthesis_distributions_wd.png', bbox_inches='tight')
