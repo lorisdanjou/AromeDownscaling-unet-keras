@@ -147,27 +147,53 @@ def plot_PSDs(psd_df, output_dir):
     fig.savefig(output_dir + 'PSDs.png')
 
 
-def synthesis_PSDs(expes_names, psds_df, output_dir):
-    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(22, 11))
-    colormap = plt.get_cmap('cool')
-    axs[1].set_prop_cycle(mpl.cycler(color=[colormap(k) for k in np.linspace(0, 1, len(psds_df))]))
-    for i in range(len(expes_names)):
-        psd_df = psds_df[i]
-        axs[1].plot(psd_df.psd_pred, label=expes_names[i])
-    axs[1].plot(psd_df.psd_test, color="k", label="Arome500m")
-    axs[1].grid()
-    axs[1].loglog()
-    axs[1].legend()
-    axs[1].set_xlabel("$k$ [$km^{-1}$]")
+def synthesis_PSDs(expes_names, psds_df, output_dir, several_inputs=False):
+    if not several_inputs:
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(22, 11))
+        colormap = plt.get_cmap('cool')
+        axs[1].set_prop_cycle(mpl.cycler(color=[colormap(k) for k in np.linspace(0, 1, len(psds_df))]))
+        for i in range(len(expes_names)):
+            psd_df = psds_df[i]
+            axs[1].plot(psd_df.psd_pred, label=expes_names[i])
+        axs[1].plot(psd_df.psd_test, color="k", label="Arome500m")
+        axs[1].grid()
+        axs[1].loglog()
+        axs[1].legend()
+        axs[1].set_xlabel("$k$ [$km^{-1}$]")
 
-    axs[0].grid()
-    axs[0].plot(psd_df.psd_X_test, color="b", linestyle="dashed", label="Arome2km5")
-    axs[0].plot(psd_df.psd_baseline, color="r", linestyle="dashed", label="fullpos")
-    axs[0].plot(psd_df.psd_test, color="k", label="Arome500m")
-    axs[0].loglog()
-    axs[0].legend()
-    axs[0].set_xlabel("$k$ [$km^{-1}$]")
+        axs[0].grid()
+        axs[0].plot(psd_df.psd_X_test, color="b", linestyle="dashed", label="Arome2km5")
+        axs[0].plot(psd_df.psd_baseline, color="r", linestyle="dashed", label="fullpos")
+        axs[0].plot(psd_df.psd_test, color="k", label="Arome500m")
+        axs[0].loglog()
+        axs[0].legend()
+        axs[0].set_xlabel("$k$ [$km^{-1}$]")
 
-    fig.suptitle("PSDs", fontsize=30)
-    
-    fig.savefig(output_dir + 'PSDs.png', bbox_inches='tight')
+        fig.suptitle("PSDs", fontsize=30)
+        
+        fig.savefig(output_dir + 'PSDs.png', bbox_inches='tight')
+    else:
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(22, 11))
+        colormap = plt.get_cmap('cool')
+        axs[0].set_prop_cycle(mpl.cycler(color=[colormap(k) for k in np.linspace(0, 1, len(psds_df))]))
+        axs[1].set_prop_cycle(mpl.cycler(color=[colormap(k) for k in np.linspace(0, 1, len(psds_df))]))
+        for i in range(len(expes_names)):
+            psd_df = psds_df[i]
+            axs[1].plot(psd_df.psd_pred, label="Unet {}".format(expes_names[i]))
+            axs[0].plot(psd_df.psd_X_test, label="Arome2km5 {}".format(expes_names[i]))
+        axs[1].plot(psd_df.psd_test, color="k", label="Arome500m")
+        axs[1].grid()
+        axs[1].loglog()
+        axs[1].legend()
+        axs[1].set_xlabel("$k$ [$km^{-1}$]")
+
+        axs[0].grid()
+        axs[0].plot(psd_df.psd_baseline, color="k", linestyle="dashed", label="fullpos")
+        axs[0].plot(psd_df.psd_test, color="k", label="Arome500m")
+        axs[0].loglog()
+        axs[0].legend()
+        axs[0].set_xlabel("$k$ [$km^{-1}$]")
+
+        fig.suptitle("PSDs", fontsize=30)
+        
+        fig.savefig(output_dir + 'PSDs.png', bbox_inches='tight')

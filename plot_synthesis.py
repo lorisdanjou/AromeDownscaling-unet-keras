@@ -5,6 +5,7 @@ import results.pointwise_scores as ps
 import results.WD as wd
 import results.PSD as psd
 import results.correlation_length as corr_len
+import results.correlation as corr
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
         ) for i in range(len(expes_paths))
     ]
 
-    # plot maps NON
+    # plot maps
     print("Ploting maps ...")
     outputs.plot_synthesis_maps(
         expes_names,
@@ -42,8 +43,8 @@ if __name__ == "__main__":
         opt["path"]["output_dir"],
         opt["data"]["param"],
         opt["data"]["unit"], 
-        cmap=opt["maps"]["cmap"]
-
+        cmap=opt["maps"]["cmap"],
+        several_inputs=opt["expes"]["several_inputs"]
     )
 
     # pointwise scores
@@ -58,7 +59,7 @@ if __name__ == "__main__":
             opt["path"]["output_dir"],
             "MAE",
             opt["data"]["unit"], 
-            cmap="BuPu"
+            cmap="pink"
         )
 
     if opt["mse"]:
@@ -71,8 +72,8 @@ if __name__ == "__main__":
             mses_df,
             opt["path"]["output_dir"],
             "MSE",
-            "$" + opt["data"]["unit"] + "\{^2}$", 
-            cmap="BuPu"
+            "$" + opt["data"]["unit"] + "^2$", 
+            cmap="pink"
         )
 
     if opt["bias"]:
@@ -123,13 +124,15 @@ if __name__ == "__main__":
             opt["path"]["output_dir"]
         )
 
+
     # PSDs
     if opt["PSD"]:
         print("Computing & Plotting PSDs ...")
         psds_df = []
         for expe_df in expes_results:
             psds_df.append(psd.PSD(expe_df))
-        psd.synthesis_PSDs(expes_names, psds_df, opt["path"]["output_dir"])
+        psd.synthesis_PSDs(expes_names, psds_df, opt["path"]["output_dir"], several_inputs=opt["expes"]["several_inputs"])
+
 
     # correlation length
     if opt["corr_len"]:
@@ -144,3 +147,12 @@ if __name__ == "__main__":
         )
 
     # correlation
+    if opt["corr"]:
+        print("Computing & Plotting correlations ...")
+        corrs_df = []
+        corrs_df_terre = []
+        corre_df_mer = []
+        for expe_df in expes_results:
+            corrs_df.append(corr.correlation(expe_df))
+            corrs_df.append(corr.correlation_terre(expe_df))
+            corrs_df.append(corr.correlation_mer(expe_df))

@@ -2,7 +2,7 @@ import os
 import argparse
 import core.logger as logger
 
-import results.load_results as lr
+import results.outputs as out
 import results.pointwise_scores as ps
 import results.WD as wd
 import results.PSD as psd
@@ -27,14 +27,14 @@ if __name__ == "__main__":
     y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
 
     for i_p, param in enumerate(opt["data"]["params_out"]):
-        results_df = lr.load_results(
+        results_df = out.load_results(
             "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/y_pred.csv",
             resample = opt["data"]["interp"],
             data_test_location = opt["data"]["data_test_location"],
             baseline_location = opt["data"]["baseline_location"],
             param=param
         )
-        lr.plot_results(
+        out.plot_results(
             results_df,
             opt["path"]["results"],
             param=param,

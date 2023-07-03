@@ -19,18 +19,19 @@
             "/cnrm/recyf/Data/users/danjoul/unet_experiments/t2m/params/ts/y_pred.csv"
         ],
         "names": ["t2m", "toa", "ts"],
-        "interp": ["r", "r", "r"]
+        "interp": ["r", "r", "r"],
+        "several_inputs": true
     },
     "maps": {
         "cmap": "viridis",
         "n": 10
     },
-    "mae":      false,
-    "mse":      false,
-    "bias":     false,
-    "ssim":     false,
-    "WD":       false,
-    "PSD":      false,
+    "mae":      true,
+    "mse":      true,
+    "bias":     true,
+    "ssim":     true,
+    "WD":       true,
+    "PSD":      true,
     "corr_len": true,
     "corr":     true
 }
