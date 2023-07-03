@@ -53,54 +53,10 @@ if __name__ == "__main__":
     Unet.load_weights(opt["path"], unet)
     print("unet definition: ok")
 
-    # training
-    shape = (
-        opt["training"]["batch_size"],
-        X_train_df[opt["data"]["params_in"][0]].iloc[0].shape[0],
-        X_train_df[opt["data"]["params_in"][0]].iloc[0].shape[1],
-        len(opt["data"]["params_out"])
-    )
-    loss = Training.set_loss(training_opt, shape)
-    unet.compile(optimizer=Adam(learning_rate=training_opt["learning_rate"]), loss=loss, run_eagerly=training_opt["run_eagerly"])  
-    print('compilation ok')
-
-    checkpoint_path = os.path.join(opt["path"]["experiment"], "checkpoint")
-    os.makedirs(checkpoint_path, exist_ok = True)
-    callbacks = [
-        ReduceLROnPlateau(monitor='val_loss', factor=0.7, patience=4, verbose=1),
-        EarlyStopping(monitor='val_loss', patience=15, verbose=1),
-        ModelCheckpoint(os.path.join(checkpoint_path, "weights.{epoch:02d}.h5"), monitor='val_loss', verbose=1, save_best_only=True)
-    ]
-
     t2 = perf_counter()
-    print("Model definition & training preparation time: {:.2f} s".format(t2 - t1))
-
-    history = unet.fit(
-        train_generator, 
-        batch_size=training_opt["batch_size"],
-        epochs=training_opt["n_epochs"],  
-        validation_data=valid_generator, 
-        callbacks = callbacks,
-        verbose=2,
-        shuffle=True
-    )
+    print("Model definition time: {:.2f} s".format(t2 - t1))
 
     unet.summary()
-    print(history.history.keys())
-
-    # summarize history for loss
-    loss_curve = plt.figure()
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.semilogy()
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'valid'], loc='upper left')
-    plt.savefig(opt["path"]["experiment"] + 'Loss_curve.png')
-
-    t3 = perf_counter()
-    print("Training time: {:.2f} s".format(t3 - t2))
 
     # inference
     y_pred = unet.predict(X_test)
@@ -112,8 +68,8 @@ if __name__ == "__main__":
         for i_c, c in enumerate(arrays_cols):
             y_pred_df[c][i] = y_pred[i, :, :, i_c]
 
-    t4 = perf_counter()
-    print("Inference time: {:.2f} s".format(t4 - t3))
+    t3 = perf_counter()
+    print("Inference time: {:.2f} s".format(t3 - t2))
 
     # postprocessing
     y_pred_df = Data.postprocess_data(opt, y_test_df)
@@ -121,6 +77,6 @@ if __name__ == "__main__":
     # save
     y_pred_df.to_pickle(opt["path"]["experiment"] + 'y_pred.csv')
 
-    t5 = perf_counter()
-    print("Postprocessing time: {:.2f} s".format(t5 - t4))
-    print("Total time: {:.2f} s".format(t5 - t0))
+    t4 = perf_counter()
+    print("Postprocessing time: {:.2f} s".format(t4 - t3))
+    print("Total time: {:.2f} s".format(t4 - t0))
