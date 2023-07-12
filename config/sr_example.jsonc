@@ -1,7 +1,7 @@
 {
     "path": {
-        "experiment": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/",
-        "weights": null
+        "experiment": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/", // working directory
+        "weights": null // path to .h5 file containing weights
     },
     "data": {
         // these hyperparameters should not be changed : 
@@ -9,7 +9,7 @@
         "data_valid_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_test/",
         "data_test_location": "/cnrm/recyf/Data/users/danjoul/dataset/data_test/",
         "data_static_location": "/cnrm/recyf/Data/users/danjoul/dataset/",
-        "baseline_location": "/cnrm/recyf/Data/users/danjoul/dataset/baseline/",
+        "baseline_location": "/cnrm/recyf/Data/users/danjoul/dataset/baseline/test/",
         "dates_train": [
             "2020070100-2021053100-PT24H"
         ],
@@ -31,16 +31,16 @@
         "echeances": [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
         // these hyperparameters can be changed : 
         "interp": "r", //"r", "bl", "bc" or "c" (the last one should not work)
-        "params_in": ["t2m"],
-        "params_out": ["t2m"],
-        "static_fields": [],
+        "params_in": ["t2m"], // inputs
+        "params_out": ["t2m"], // outputs
+        "static_fields": [], // static fields in input
         "config": "optimisation" // "optimisation" or "test"
     },
     "preprocessing": {
-        "normalisation": "standardisation",
+        "normalisation": "standardisation", // "normalisation", "standardisation", "minmax" or "mean"
         "patches": {
-            "enable": false,
-            "train_method": "random", //null, "random" or "patchify" //useless if "enable": false
+            "enable": false, // if false, options below are useless
+            "train_method": "random", //null, "random" or "patchify"
             "test_method": "patchify", //null or "patchify"
             // for "random"
             "patch_h": 128,
@@ -52,7 +52,7 @@
             "IMG_W": 320
         },
         "data_augmentation": {
-            "enable_flip": false,
+            "enable_flip": false, 
             "frac_flip": 0.3,
             "enable_rot": false,
             "frac_rot": 0.1
@@ -61,8 +61,8 @@
     },
     "model": {
         "type": "unet", // "unet", "resunet" or "uresnet"
-        "layers": 4,
-        "filters": 32
+        "layers": 4, // depth of the Unet
+        "filters": 32 // number of kernel filters that will be used on the first layer (multiplied on other layers)
     },
     "training": {
         "loss": "mse", // "mse", "custom" ou "hybrid"
@@ -71,27 +71,27 @@
         "eps": 15,   //for custom loss
         "batch_size": 32,
         "learning_rate": 0.005,
-        "n_epochs": 1,
+        "n_epochs": 100,
         "run_eagerly": false //true when loss == "custom"
     },
     "results": {
         "images": {
-            "units": ["K"],
-            "cmap": ["viridis"],
-            "n": 10
+            "units": ["K"], // units for each channel
+            "cmap": ["viridis"], //colormaps for each channel
+            "n": 10 // number of images to plot
         },
         "pointwise_scores": {
             "mae": {
                 "enable": true,
                 "mode": "unique",
-                "cmap": "BuPu",
+                "cmap": "pink",
                 "units": ["K"],
                 "n": null
             },
             "mse": {
                 "enable": true,
                 "mode": "unique",
-                "cmap": "BuPu",
+                "cmap": "pink",
                 "units": ["$K^{2}$"],
                 "n": null
             },
@@ -105,22 +105,22 @@
             "ssim": {
                 "enable": true,
                 "mode": "unique",
-                "cmap": "magma",
+                "cmap": "plasma",
                 "units": [""],
                 "n": null
             }
         },
         "WD": {
-            "enable": false
+            "enable": true
         },
         "PSD": {
-            "enable": false
+            "enable": true
         },
         "correlation_length": {
-            "enable": false
+            "enable": true
         },
         "correlation": {
-            "enable": false
+            "enable": true
         }
     }
 }
