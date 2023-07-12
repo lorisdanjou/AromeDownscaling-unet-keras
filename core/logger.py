@@ -2,6 +2,9 @@ import json
 from collections import OrderedDict
 
 def parse(args):
+    """
+    Parse args (jsonc file)
+    """
     opt_path = args.config
     # remove comments starting with '//'
     json_str = ''

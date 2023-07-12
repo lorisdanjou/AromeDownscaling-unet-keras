@@ -11,8 +11,10 @@ def wasserstein_distance(a, b):
     return sc.wasserstein_distance(dist_a, dist_b)
 
 
-# compute WD for the whole results dataframe
 def compute_datewise_WD(results_df):
+    """
+    Computes WD for a DataFrame
+    """
     wasserstein_df = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -30,6 +32,9 @@ def compute_datewise_WD(results_df):
 
 
 def compute_datewise_WD_terre(results_df):
+    """
+    Same for land domain only
+    """
     ind_terre_mer = np.reshape(utils.get_ind_terre_mer_500m(), -1)
     wasserstein_df = pd.DataFrame(
         {'dates' : [],
@@ -52,6 +57,9 @@ def compute_datewise_WD_terre(results_df):
 
 
 def compute_datewise_WD_mer(results_df):
+    """
+    Same for sea domain only
+    """
     ind_terre_mer = np.reshape(utils.get_ind_terre_mer_500m(), -1)
     wasserstein_df = pd.DataFrame(
         {'dates' : [],
@@ -73,8 +81,10 @@ def compute_datewise_WD_mer(results_df):
     return wasserstein_df
 
 
-# plot distributions
 def plot_datewise_wasserstein_distance_distrib(wd_df, wd_df_terre, wd_df_mer, output_dir):    
+    """
+    Plots WD distributions
+    """
     wd_df_baseline = wd_df['datewise_wasserstein_distance_baseline']
     wd_df_pred = wd_df['datewise_wasserstein_distance_pred']
     wd_df_baseline_terre = wd_df_terre['datewise_wasserstein_distance_baseline']
@@ -115,6 +125,9 @@ def plot_datewise_wasserstein_distance_distrib(wd_df, wd_df_terre, wd_df_mer, ou
 
 
 def synthesis_wasserstein_distance_distrib(expes_names, wds_df, wds_df_terre, wds_df_mer, output_dir):
+    """
+    Plots WD distributions for several experiments
+    """
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
     D_terre = []

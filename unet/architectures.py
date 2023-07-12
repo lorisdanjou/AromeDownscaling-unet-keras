@@ -5,6 +5,18 @@ from unet.blocks import *
 
 
 def unet_maker(shape_input, output_channels=1, layers = 4, filters = 32):
+    """
+    Defines a simple Unet
+
+    Args:
+        shape_input (tuple): shape of the input tensors [H, W, C]
+        output_channels (int, optional): number of output channels. Defaults to 1.
+        layers (int, optional): depth of the Unet. Defaults to 4.
+        filters (int, optional): number of kernel filters on the first layer (multiplied on other layers). Defaults to 32.
+
+    Returns:
+        keras.models.Model: Unet
+    """
     inputs_list=[]
     inputs = keras.Input(shape = shape_input)
     inputs_list.append(inputs)
@@ -29,6 +41,18 @@ def unet_maker(shape_input, output_channels=1, layers = 4, filters = 32):
 
 
 def UResNet_maker(shape_input, output_channels=1, layers = 4, filters = 32):
+    """
+    Defines a UResNet
+
+    Args:
+        shape_input (tuple): shape of the input tensors [H, W, C]
+        output_channels (int, optional): number of output channels. Defaults to 1.
+        layers (int, optional): depth of the Unet. Defaults to 4.
+        filters (int, optional): number of kernel filters on the first layer (multiplied on other layers). Defaults to 32.
+
+    Returns:
+        keras.models.Model: UResNet
+    """
     inputs_list=[]
     inputs = keras.Input(shape = shape_input)
     inputs_list.append(inputs)
@@ -53,6 +77,18 @@ def UResNet_maker(shape_input, output_channels=1, layers = 4, filters = 32):
 
 
 def ResUNet_maker(shape_input, output_channels=1, layers = 4, filters = 32):
+    """
+    Defines a ResUnet
+
+    Args:
+        shape_input (tuple): shape of the input tensors [H, W, C]
+        output_channels (int, optional): number of output channels. Defaults to 1.
+        layers (int, optional): depth of the Unet. Defaults to 4.
+        filters (int, optional): number of kernel filters on the first layer (multiplied on other layers). Defaults to 32.
+
+    Returns:
+        keras.models.Model: ResUnet
+    """
     inputs_list=[]
     inputs = keras.Input(shape = shape_input)
     inputs_list.append(inputs)

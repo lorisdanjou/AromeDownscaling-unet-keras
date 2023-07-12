@@ -7,7 +7,6 @@ import cartopy.crs as ccrs
 
 
 def get_metric_tensor(eps, sca):
-    
     """
     Compute the metric correlation tensor of a given field eps
     with a unit length scale sca
@@ -94,6 +93,15 @@ def length_scale(eps, sca = 1.0) :
 
 # for a whole dataframe
 def compute_corr_len(results_df):
+    """
+    computes correlation length for a dataframe
+
+    Args:
+        results_df (DataFrame): contains results
+
+    Returns:
+        DataFrame: contains correlation length
+    """
     y_pred = np.zeros((len(results_df), 1, results_df.y_pred[0].shape[0], results_df.y_pred[0].shape[1]))
     y_test = np.zeros((len(results_df), 1, results_df.y_test[0].shape[0], results_df.y_test[0].shape[1]))
     baseline = np.zeros((len(results_df), 1, results_df.baseline[0].shape[0], results_df.baseline[0].shape[1]))
@@ -116,6 +124,9 @@ def compute_corr_len(results_df):
 
 
 def plot_corr_len(corr_len_df, output_dir):
+    """
+    Plots correlation length maps
+    """
     corr_len_test     = corr_len_df['corr_len_test'].iloc[0]
     corr_len_pred     = corr_len_df['corr_len_pred'].iloc[0]
     corr_len_baseline = corr_len_df['corr_len_baseline'].iloc[0]
@@ -144,6 +155,9 @@ def plot_corr_len(corr_len_df, output_dir):
 
 
 def plot_synthesis_corr_len(expes_names, corr_lens_df, output_dir):
+    """
+    Plots correlation length maps for several experiments
+    """
     n_expes = len(corr_lens_df)
     fig = plt.figure(figsize=[5*n_expes, 9])
     fig.suptitle("Correlation length", fontsize=30)

@@ -171,6 +171,15 @@ def rebuild_from_patchify(df_patches, img_h, img_w):
 
 # padding for patchify
 def pad_for_patchify(df):
+    """
+    pads a dataframe so that it can be used with patchify (usable with Arome500m fields)
+
+    Args:
+        df (DataFrame):
+
+    Returns:
+        DataFrame: a transformed DataFrame
+    """
     df_out = df.copy()
     channels = utils.get_arrays_cols(df)
     for c in channels:
@@ -179,6 +188,9 @@ def pad_for_patchify(df):
     return df_out
 
 def crop_for_patchify(df):
+    """
+    Reverso operation of pad_for_patchify
+    """
     df_out = df.copy()
     channels = utils.get_arrays_cols(df)
     for c in channels:
@@ -187,6 +199,17 @@ def crop_for_patchify(df):
     return df_out
 
 def get_n_patches(img_h, img_w, patch_size):
+    """
+    returns the number of patches that will be extracted by patchify given the shape of the image and patch size
+
+    Args:
+        img_h (int): image height
+        img_w (int): image width
+        patch_size (int): size of the patch
+
+    Returns:
+        int: number of patches that will be extracted
+    """
     img = np.zeros((img_h, img_w))
     step = min(gcd(patch_size, img_h), gcd(patch_size, img_w))
     patches = patchify(img,  (patch_size, patch_size), step=step)

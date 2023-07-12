@@ -7,6 +7,22 @@ import cartopy.crs as ccrs
 
 
 def load_results(y_pred_path, resample, data_test_location, baseline_location, param='t2m'):
+    """
+    Load results in a DataFrame
+
+    Args:
+        y_pred_path (str): path to y_pred.csv
+        resample (str): "c", "r", "bl" or "bc" to load the correct input
+        data_test_location (str): path to test data dir
+        baseline_location (str): path to baseline dir
+        param (str, optional): parameter to load. Defaults to 't2m'.
+
+    Raises:
+        NotImplementedError:
+
+    Returns:
+        DataFrame: results
+    """
     y_pred_df = pd.read_pickle(y_pred_path)
     dates_test = y_pred_df.dates.drop_duplicates().values
     echeances = y_pred_df.echeances.drop_duplicates().values
@@ -71,6 +87,9 @@ def load_results(y_pred_path, resample, data_test_location, baseline_location, p
 
 
 def plot_maps(results_df, output_dir, param, unit, cmap="viridis", n=10):
+    """
+    Plot param maps
+    """
     for i in range(n):
         fig = plt.figure(figsize=[25, 6])
         axs = []
@@ -98,6 +117,9 @@ def plot_maps(results_df, output_dir, param, unit, cmap="viridis", n=10):
 
 
 def plot_synthesis_maps(expes_names, expes_results, output_dir, param, unit, cmap="viridis", n=10, several_inputs=False):
+    """
+    Same for several experiments
+    """
     n_expes = len(expes_results)
     if not several_inputs:
         for i in range(n):

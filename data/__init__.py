@@ -6,6 +6,18 @@ import data.data_augmentation as da
 import utils
 
 def load_data(data_loading_opt):
+    """
+    Loads data following options
+
+    Args:
+        data_loading_opt (dict): a dict containing options
+
+    Raises:
+        NotImplementedError
+
+    Returns:
+        X_[train, valid, test], y_[train, valid, test]: pandas dataframes containing data
+    """
     data_train_location  = data_loading_opt["data_train_location"]
     data_valid_location  = data_loading_opt["data_valid_location"]
     data_test_location   = data_loading_opt["data_test_location"]
@@ -116,7 +128,25 @@ def load_data(data_loading_opt):
     return X_train_df, y_train_df, X_valid_df, y_valid_df, X_test_df, y_test_df
 
 def  preprocess_data(preproc_opt, output_dir, X_train_df, y_train_df, X_valid_df, y_valid_df, X_test_df, y_test_df):
+    """
+    preprocess data folloing options
 
+    Args:
+        preproc_opt (dict): options
+        output_dir (str): path to output directory for mean, std, etc
+        X_train_df (DataFrame)
+        y_train_df (DataFrame):
+        X_valid_df (DataFrame): 
+        y_valid_df (DataFrame): 
+        X_test_df (DataFrame): 
+        y_test_df (DataFrame): 
+
+    Raises:
+        NotImplementedError: 
+
+    Returns:
+        DataFrame: X_[train, valid, test], y_[train, valid, test] preprocessed
+    """
     # remove missing days
     X_train_df, y_train_df = ld.delete_missing_days(X_train_df, y_train_df)
     X_valid_df, y_valid_df = ld.delete_missing_days(X_valid_df, y_valid_df)
@@ -208,6 +238,16 @@ def  preprocess_data(preproc_opt, output_dir, X_train_df, y_train_df, X_valid_df
 
 
 def postprocess_data(opt, y_pred_df):
+    """
+    postprocess data followind options
+
+    Args:
+        opt (dict): options
+        y_pred_df (DataFrame): prediction of the model
+
+    Returns:
+        DataFrame: y_pred_df postprocessed
+    """
     output_dir = opt["path"]["experiment"]
 
     # rebuild from patches

@@ -5,6 +5,9 @@ from bronx.stdtypes.date import daterangex as rangex
 
 
 def get_shape_500m():
+    """
+    returns the shape of Arome500m
+    """
     field_500m = np.load('/cnrm/recyf/Data/users/danjoul/dataset/data_train/G9KP_2021-01-01T00:00:00Z_rr.npy')
     return field_500m[:, :, 0].shape
 

@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 
 
 def correlation(results_df):
+    """
+    Computes correlation coefficients (R)
+    """
     corr_df = pd.DataFrame(
         [],
         columns=['dates', 'echeances', 'r_baseline', 'r_pred']
@@ -23,6 +26,9 @@ def correlation(results_df):
 
 
 def correlation_terre(results_df): # using masks
+    """
+    Same for land domain
+    """
     ind_terre_mer = utils.get_ind_terre_mer_500m()
     corr_df = pd.DataFrame(
         [],
@@ -51,6 +57,9 @@ def correlation_terre(results_df): # using masks
 
 
 def correlation_mer(results_df): # using masks
+    """
+    Same for sea domain
+    """
     ind_terre_mer = utils.get_ind_terre_mer_500m()
     corr_df = pd.DataFrame(
         [],
@@ -79,6 +88,9 @@ def correlation_mer(results_df): # using masks
 
 
 def plot_corr_distrib(corr_df, corr_df_terre, corr_df_mer, output_dir):
+    """
+    Plots correlation distributions
+    """
     corr_df_pred           = corr_df['r_pred']
     corr_df_baseline       = corr_df['r_baseline']
     corr_df_pred_terre     = corr_df_terre['r_pred']
@@ -119,6 +131,9 @@ def plot_corr_distrib(corr_df, corr_df_terre, corr_df_mer, output_dir):
 
 
 def synthesis_corr_distrib(expes_names, corrs_df, corrs_df_terre, corrs_df_mer, output_dir):
+    """
+    Plots correlation distribution for several experiments
+    """
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
     D_terre = []

@@ -28,8 +28,10 @@ def ssim(a, b):
     return ssim_map
 
 
-# compute pointwise scores for a dataframe
 def compute_score(results_df, metric, metric_name):
+    """
+    Computes pointwise scores for a DataFrame
+    """
     metric_df = pd.DataFrame(
         {'dates' : [],
         'echeances' : [],
@@ -51,6 +53,9 @@ def compute_score(results_df, metric, metric_name):
 
 
 def compute_score_terre(metric_df, metric_name):
+    """
+    Same for land domain only
+    """
     ind_terre_mer = utils.get_ind_terre_mer_500m()
     metric_terre_df = pd.DataFrame(
         {'dates' : [],
@@ -73,6 +78,9 @@ def compute_score_terre(metric_df, metric_name):
 
 
 def compute_score_mer(metric_df, metric_name):
+    """
+    Same for sea domain only
+    """
     ind_terre_mer = utils.get_ind_terre_mer_500m()
     metric_mer_df = pd.DataFrame(
         {'dates' : [],
@@ -95,6 +103,9 @@ def compute_score_mer(metric_df, metric_name):
 
 
 def plot_score_maps(metric_df, output_dir, metric_name, unit, cmap="viridis", n=10):
+    """
+    Plot several score maps
+    """
     for i in range(n):
         fig = plt.figure(figsize=[25, 12])
         fig.suptitle(metric_name, fontsize=30)
@@ -121,6 +132,9 @@ def plot_score_maps(metric_df, output_dir, metric_name, unit, cmap="viridis", n=
 
 
 def plot_unique_score_map(metric_df, output_dir, metric_name, unit, cmap="viridis", n=10):
+    """
+    Plot an unique score map
+    """
     metric_baseline = metric_df[metric_name + '_baseline_map'].mean()
     metric_y_pred   = metric_df[metric_name + '_y_pred_map'].mean()
     fig = plt.figure(figsize=[25, 12])
@@ -148,6 +162,9 @@ def plot_unique_score_map(metric_df, output_dir, metric_name, unit, cmap="viridi
 
 
 def plot_distrib(metric_df, metric_name, output_dir):
+    """
+    Plots score distributions
+    """
     score_baseline = metric_df[metric_name + '_baseline_mean']
     score_baseline_terre = compute_score_terre(metric_df, metric_name)[metric_name + '_baseline_mean']
     score_baseline_mer = compute_score_mer(metric_df, metric_name)[metric_name + '_baseline_mean']
@@ -190,6 +207,9 @@ def plot_distrib(metric_df, metric_name, output_dir):
 
 
 def plot_synthesis_scores(expes_names, metrics_df, output_dir, metric_name, unit, cmap="viridis"):
+    """
+    Plot score maps for several experiments
+    """
     n_expes = len(metrics_df)
     fig = plt.figure(figsize=[5*n_expes, 9])
     fig.suptitle(metric_name, fontsize=30)
@@ -219,6 +239,9 @@ def plot_synthesis_scores(expes_names, metrics_df, output_dir, metric_name, unit
 
 
 def synthesis_score_distribs(expes_names, metrics_df, metrics_df_terre, metrics_df_mer, output_dir, metric_name):
+    """
+    Plots score distributions for several experiments
+    """
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(20, 15))    
     D = []
     D_terre = []

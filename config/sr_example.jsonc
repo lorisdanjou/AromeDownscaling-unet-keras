@@ -75,8 +75,52 @@
         "run_eagerly": false //true when loss == "custom"
     },
     "results": {
-        "cmap": "viridis",
-        "units": ["K"],
-        "n": 10
+        "images": {
+            "units": ["K"],
+            "cmap": ["viridis"],
+            "n": 10
+        },
+        "pointwise_scores": {
+            "mae": {
+                "enable": true,
+                "mode": "unique",
+                "cmap": "BuPu",
+                "units": ["K"],
+                "n": null
+            },
+            "mse": {
+                "enable": true,
+                "mode": "unique",
+                "cmap": "BuPu",
+                "units": ["$K^{2}$"],
+                "n": null
+            },
+            "bias": {
+                "enable": true,
+                "mode": "unique",
+                "cmap": "coolwarm",
+                "units": ["K"],
+                "n": null
+            },
+            "ssim": {
+                "enable": true,
+                "mode": "unique",
+                "cmap": "magma",
+                "units": [""],
+                "n": null
+            }
+        },
+        "WD": {
+            "enable": false
+        },
+        "PSD": {
+            "enable": false
+        },
+        "correlation_length": {
+            "enable": false
+        },
+        "correlation": {
+            "enable": false
+        }
     }
 }

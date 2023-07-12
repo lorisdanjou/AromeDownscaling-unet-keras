@@ -109,6 +109,9 @@ def PowerSpectralDensity(x):
 
 
 def PSD(results_df):
+    """
+    Computes PSDs for a DataFrame
+    """
     y_pred = np.zeros((len(results_df), 1, results_df.y_pred[0].shape[0], results_df.y_pred[0].shape[1]))
     y_test = np.zeros((len(results_df), 1, results_df.y_test[0].shape[0], results_df.y_test[0].shape[1]))
     baseline = np.zeros((len(results_df), 1, results_df.baseline[0].shape[0], results_df.baseline[0].shape[1]))
@@ -133,6 +136,9 @@ def PSD(results_df):
 
 
 def plot_PSDs(psd_df, output_dir):
+    """
+    Plots PSDs
+    """
     fig, ax = plt.subplots()
     ax.grid()
     ax.plot(psd_df.psd_test, color='k', label='PSD Arome500m')
@@ -148,6 +154,9 @@ def plot_PSDs(psd_df, output_dir):
 
 
 def synthesis_PSDs(expes_names, psds_df, output_dir, several_inputs=False):
+    """
+    Plots PSDs for several experiments
+    """
     if not several_inputs:
         fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(22, 11))
         colormap = plt.get_cmap('cool')
