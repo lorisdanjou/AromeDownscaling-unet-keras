@@ -21,9 +21,9 @@ def set_generators(
     """
     train_generator = DataGenerator(X_train_df, y_train_df, training_opt["batch_size"])
     valid_generator = DataGenerator(X_valid_df, y_valid_df, training_opt["batch_size"])
-    X_test , y_test = utils.df_to_array(X_test_df) , utils.df_to_array(y_test_df)
+    test_generator  = DataGenerator(X_test_df, y_test_df, batch_size=1, shuffle=False, input_only=True)
 
-    return train_generator, valid_generator, X_test, y_test
+    return train_generator, valid_generator, test_generator
 
 
 def set_loss(training_opt, shape):
