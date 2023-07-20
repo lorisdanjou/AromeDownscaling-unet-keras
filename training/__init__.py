@@ -1,6 +1,7 @@
 from training.generator import DataGenerator
 import utils
 import training.losses as losses
+import tensorflow as tf
 
 
 def set_generators(
@@ -32,6 +33,10 @@ def set_loss(training_opt, shape):
     """
     if training_opt["loss"] == "mse":
         loss = "mse"
+    elif training_opt["loss"] == "mae":
+        loss = "mae"
+    elif training_opt["loss"] == "huber":
+        loss = tf.keras.losses.Huber()
     elif training_opt["loss"] == "hybrid":
         loss = losses.mse_terre_mer(shape, training_opt["frac"])
     elif training_opt["loss"] == "custom":

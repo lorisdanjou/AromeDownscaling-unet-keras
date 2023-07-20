@@ -52,7 +52,7 @@ def load_X(dates, echeances, params, data_location, data_static_location='', sta
                 elif resample == 'bl':
                     filepath_X = data_location + 'oper_bl_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_p = np.load(filepath_X).transpose([2, 0, 1])
-                    X_d[:, :, :, i_p] = np.pad(X_p, ((5,4), (2,5), (0,0)), mode='edge')
+                    X_d[:, :, :, i_p] = np.pad(X_p, ((0,0), (5,4), (2,5)), mode='edge')
                 elif resample == 'bc':
                     filepath_X = data_location + 'oper_bc_' + d.isoformat() + 'Z_' + p + '.npy'
                     X_p = np.load(filepath_X).transpose([2, 0, 1])
