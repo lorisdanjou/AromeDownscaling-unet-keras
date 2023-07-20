@@ -20,7 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     opt = logger.parse(args)
 
-    expes_names = opt["expes"]["name"]
+    expes_names = opt["expes"]["names"]
     expes_paths = opt["expes"]["results"]
     expes_interps = opt["expes"]["interp"]
 
@@ -222,8 +222,15 @@ if __name__ == "__main__":
         print("Computing & Plotting correlations ...")
         corrs_df = []
         corrs_df_terre = []
-        corre_df_mer = []
+        corrs_df_mer = []
         for expe_df in expes_results:
             corrs_df.append(corr.correlation(expe_df))
-            corrs_df.append(corr.correlation_terre(expe_df))
-            corrs_df.append(corr.correlation_mer(expe_df))
+            corrs_df_terre.append(corr.correlation_terre(expe_df))
+            corrs_df_mer.append(corr.correlation_mer(expe_df))
+        corr.synthesis_corr_distrib(
+            expes_names,
+            corrs_df,
+            corrs_df_terre,
+            corrs_df_mer,
+            opt["path"]["output_dir"]
+        )

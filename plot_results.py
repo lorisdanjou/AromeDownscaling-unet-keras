@@ -22,6 +22,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     opt = logger.parse(args)
 
+    os.makedirs(opt["path"]["results"], exist_ok=True)
+
 
     # load & plot results
     y_pred_path = os.path.join(opt["path"]["experiment"], "y_pred.csv")
