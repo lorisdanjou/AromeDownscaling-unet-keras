@@ -2,10 +2,12 @@
 This project is a part of an internship at Meteo France, which aims at downscaling meteorological fields obtained with the Arome model.
 It is fully usable as long as it is used on the data it has been created to work with.
 
+It implements a Unet, and is isnpired by https://github.com/antoinedoury/RCM-Emulator.
+A second project implements a DDPM specifically for wind downscaling: https://github.com/lorisdanjou/AromeDownscaling-ddpm-pytorch
+
 ## Prerequisites
 Some packages (and specific versions of these packages) need to be installed to run the codes:
 ```
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
@@ -29,7 +31,7 @@ The `infer.py` file is made for that:
 python3 infer.py -c config/sr_example.jsonc
 ```
 
-## Print the results of an experiment
+## Plot the results of an experiment
 You can use the `plot_results.py` script to do that: 
 ```
 python3 plot_results.py -c config/sr_example.jsonc
