@@ -271,6 +271,8 @@ def postprocess_data(opt, y_pred_df):
     if patches_opt["enable"]:
         if patches_opt["test_method"] == "patchify":
             y_pred_df = patches.crop_for_patchify(y_pred_df)
+        elif patches_opt["test_method"] == None:
+            y_pred_df = utils.crop(y_pred_df)
     else:
         y_pred_df = utils.crop(y_pred_df)
 

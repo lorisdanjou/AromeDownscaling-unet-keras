@@ -1,6 +1,6 @@
 {
     "path": {
-        "experiment": "/cnrm/recyf/Data/users/danjoul/unet_experiments/tests/", // working directory
+        "experiment": "/cnrm/recyf/Data/users/danjoul/UNET/experiments/t2m/example/", // working directory
         "weights": null // path to .h5 file containing weights
     },
     "data": {
